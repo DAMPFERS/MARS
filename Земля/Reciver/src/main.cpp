@@ -38,26 +38,38 @@ void setup() {
 void loop() {
   static uint8_t start_packet_flags = false; // Флаг для отслеживания начала пакета
   static uint8_t ff_counter = 0; // Счетчик для отслеживания количества подряд идущих 0xFF
+  static uint32_t timer = 0; // Таймер для отслеживания времени между пакетами
+
+  
+  if (start_packet_flags && (millis() - timer > 1000)) { // Если прошло больше 1 секунды с последнего сигнала, считаем пакет завершенным
+    start_packet_flags = false; // Сбрасываем флаг после окончания пакета
+    ff_counter = 0; // Сбрасываем счетчик для следующего пакета
+  }
+
+
   // Проверяем, доступен ли ИК-сигнал
     if (ir.available()) {
       uint8_t ik_address = ir.readAddress();  // Читаем адрес и выводим его в шестнадцатеричном формате
       uint8_t ik_command = ir.readCommand();  // Читаем команду и выводим её в шестнадцатеричном формате
       
       if (!start_packet_flags) {
-        Serial.print("Start packet: ");
-        Serial.print(ik_address, HEX);
+        Serial.print("Start packet:");
+        // delay(10); // Небольшая задержка для корректного отображения в мониторе порта
+        Serial.write(ik_address);
+        Serial.write(ik_command);
         start_packet_flags = true; // Устанавливаем флаг начала пакета
         ff_counter = 0; // Сбрасываем счетчик при начале нового пакета
+        timer = millis(); // Сбрасываем таймер при начале нового пакета
       }
       else{
-        Serial.print(ik_command);
+        Serial.write(ik_command);
         if (ik_command == 0xFF) {
           ff_counter++; // Увеличиваем счетчик при получении 0xFF
-          
           if(ff_counter >= 3) { // Если получили 3 подряд 0xFF, считаем пакет завершенным
             start_packet_flags = false; // Сбрасываем флаг после окончания пакета
             ff_counter = 0; // Сбрасываем счетчик для следующего пакета
           }
+          timer = millis(); // Сбрасываем таймер при получении 0xFF
         } 
         else {
           ff_counter = 0; // Сбрасываем счетчик при получении команды, отличной от 0xFF
