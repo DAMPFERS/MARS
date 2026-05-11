@@ -70,6 +70,12 @@ void loop() {
         delay(50);
       }
 
+      // Добавляем три байта 0xFF в конец пакета
+      for (int i = 0; i < 3; i++) {
+        ir.send(DOM_ADDRESS, 0xFF);
+        delay(50);
+      }
+
       // Отображаем на дисплее
       oled.clear();
       oled.home();
