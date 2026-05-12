@@ -77,6 +77,9 @@ def set_all_sun(sun_val: int) -> bool:
 def set_all_weather(sun_val: int, wind_val: int) -> bool:
     """Устанавливает полную погоду на всех 4 стендах двумя параметрами."""
     print(f"\n🌦️ Устанавливаю погоду на всех стендах: Солнце={sun_val}, Ветер={wind_val}...")
+    sun_val = max(0, min(100, int(sun_val)))
+    wind_val = max(0, min(100, int(wind_val)))
+    
     set_all_sun(sun_val)
     
     return set_all_wind(wind_val)
