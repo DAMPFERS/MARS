@@ -221,147 +221,164 @@ class StationWidget(QWidget):
 class MarsForecastApp(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowFlags(Qt.FramelessWindowHint)  # Убираем системную рамку окна
-        self.drag_pos = None  # Для перетаскивания окна
+        self.setWindowFlags(Qt.FramelessWindowHint)
+        self.drag_pos = None
+        self.is_fullscreen = False
 
-        self.data = None  # Данные из CSV
-        self.col_x = self.col_y1 = self.col_y2 = None  # Номера колонок для X, Y1, Y2
-        self.active_point_index = None  # Индекс активной точки на графиках
-        self.stations = []  # Список станций
+        self.data = None
+        self.col_x = self.col_y1 = self.col_y2 = None
+        self.active_point_index = None
+        self.stations = []
         self.init_ui()
 
-    def mousePressEvent(self, event):  # Для перетаскивания окна без рамки
-        if event.button() == Qt.LeftButton:
+    def mousePressEvent(self, event):
+        if event.button() == Qt.LeftButton and not self.is_fullscreen:
             self.drag_pos = event.globalPos() - self.frameGeometry().topLeft()
             event.accept()
         super().mousePressEvent(event)
 
-    def mouseMoveEvent(self, event):  # Для перетаскивания окна без рамки
-        if event.buttons() == Qt.LeftButton and self.drag_pos:
+    def mouseMoveEvent(self, event):
+        if event.buttons() == Qt.LeftButton and self.drag_pos and not self.is_fullscreen:
             self.move(event.globalPos() - self.drag_pos)
             event.accept()
         super().mouseMoveEvent(event)
 
     def init_ui(self):
         self.setWindowTitle("MARS CONTROL CENTER")
-        self.setGeometry(100, 100, 1600, 900)  # Размер окна: ширина 1600, высота 900
+        self.setGeometry(100, 100, 1600, 900)
 
-        central = QWidget()  # Центральный виджет
+        central = QWidget()
         self.setCentralWidget(central)
 
-        self.main_layout = QVBoxLayout(central)  # Вертикальная компоновка для всего окна
-        self.main_layout.setContentsMargins(10, 10, 10, 10)  # Отступы от края приложения (10px со всех сторон)
-        self.main_layout.setSpacing(5)  # Расстояние между шапкой и сеткой со станциями (5px)
+        self.main_layout = QVBoxLayout(central)
+        self.main_layout.setContentsMargins(10, 10, 10, 10)
+        self.main_layout.setSpacing(5)
 
-        self.create_header()  # Создаём шапку
+        self.create_header()
 
-        self.grid = QGridLayout()  # Сетка 2x3 (станции + графики)
-        self.grid.setSpacing(5)  # Расстояние между станциями и графиками (5px)
-        self.grid.setContentsMargins(0, 0, 0, 0)  # Отступы внутри сетки (0px)
+        self.grid = QGridLayout()
+        self.grid.setSpacing(5)
+        self.grid.setContentsMargins(0, 0, 0, 0)
         self.main_layout.addLayout(self.grid)
 
-        # Создаём 4 станции
         self.stations.append(self._create_station("СТАНЦИЯ МАРС-1", 0))
         self.stations.append(self._create_station("СТАНЦИЯ МАРС-2", 1))
         self.stations.append(self._create_station("СТАНЦИЯ МАРС-3", 2))
         self.stations.append(self._create_station("СТАНЦИЯ МАРС-4", 3))
 
-        # Располагаем в сетке:
-        self.grid.addWidget(self.stations[0], 0, 0)  # Станция 1 в строке 0, столбце 0
-        self.grid.addWidget(self._create_graphs(), 0, 1, 1, 2)  # Графики в строке 0, столбцах 1-2 (занимает 1 строку, 2 столбца)
-        self.grid.addWidget(self.stations[1], 1, 0)  # Станция 2 в строке 1, столбце 0
-        self.grid.addWidget(self.stations[2], 1, 1)  # Станция 3 в строке 1, столбце 1
-        self.grid.addWidget(self.stations[3], 1, 2)  # Станция 4 в строке 1, столбце 2
+        self.grid.addWidget(self.stations[0], 0, 0)
+        self.grid.addWidget(self._create_graphs(), 0, 1, 1, 2)
+        self.grid.addWidget(self.stations[1], 1, 0)
+        self.grid.addWidget(self.stations[2], 1, 1)
+        self.grid.addWidget(self.stations[3], 1, 2)
 
-        # Растягиваем столбцы и строки сетки, чтобы все элементы равномерно заполняли пространство
-        self.grid.setColumnStretch(0, 1)  # 1-й столбец растягивается
-        self.grid.setColumnStretch(1, 1)  # 2-й столбец растягивается
-        self.grid.setColumnStretch(2, 1)  # 3-й столбец растягивается
-        self.grid.setRowStretch(0, 1)  # 1-я строка растягивается
-        self.grid.setRowStretch(1, 1)  # 2-я строка растягивается
+        self.grid.setColumnStretch(0, 1)
+        self.grid.setColumnStretch(1, 1)
+        self.grid.setColumnStretch(2, 1)
+        self.grid.setRowStretch(0, 1)
+        self.grid.setRowStretch(1, 1)
 
-        self.timer = QTimer()  # Таймер для обновления времени
-        self.timer.timeout.connect(self.update_mars_time)  # Каждую секунду обновляем время
-        self.timer.start(1000)  # Интервал 1000 мс (1 секунда)
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.update_mars_time)
+        self.timer.start(1000)
 
-        self.apply_styles()  # Применяем CSS стили
+        self.apply_styles()
 
     def create_header(self):
-        self.header = HUDPanel()  # Создаём панель для шапки
-        self.header.setFixedHeight(48)  # Фиксированная высота шапки 48px
+        self.header = HUDPanel()
+        self.header.setFixedHeight(48)
         
-        self.header.title_label.hide()  # Прячем стандартный заголовок
+        self.header.title_label.hide()
 
-        # Очищаем стандартный layout шапки
         self.header.layout.setContentsMargins(0, 0, 0, 0)
         self.header.layout.setSpacing(0)
 
         while self.header.layout.count():
             item = self.header.layout.takeAt(0)
-            if item.widget(): item.widget().setParent(None)
+            if item.widget():
+                item.widget().setParent(None)
 
-        h_layout = QHBoxLayout()  # Создаём горизонтальный блок
-        h_layout.setContentsMargins(12, 6, 12, 6)  # Отступы внутри шапки: лево=12, верх=6, право=12, низ=6
-        h_layout.setSpacing(16)  # Расстояние между элементами в шапке (16px)
+        h_layout = QHBoxLayout()
+        h_layout.setContentsMargins(12, 6, 12, 6)
+        h_layout.setSpacing(16)
 
-        title = QLabel("ЦЕНТР УПРАВЛЕНИЯ ПОЛЕТАМИ | ЗЕМЛЯ")  # Заголовок шапки
+        title = QLabel("ЦЕНТР УПРАВЛЕНИЯ ПОЛЕТАМИ | ЗЕМЛЯ")
         title.setObjectName("mainTitle")
         title.setAlignment(Qt.AlignVCenter | Qt.AlignLeft)
 
-        self.time_label = QLabel("00:00:00")  # Время
+        self.time_label = QLabel("00:00:00")
         self.time_label.setObjectName("timeLabel")
         self.time_label.setAlignment(Qt.AlignVCenter)
 
-        close_btn = QLabel("✕")  # Кнопка закрытия
+        # Кнопка полноэкранного режима - ИСПРАВЛЕНО
+        fullscreen_btn = QLabel("⛶")
+        fullscreen_btn.setObjectName("fullscreenBtn")
+        fullscreen_btn.setAlignment(Qt.AlignCenter)
+        fullscreen_btn.setCursor(Qt.PointingHandCursor)
+        # Правильный способ - через установку атрибута
+        fullscreen_btn.mouseReleaseEvent = self.create_fullscreen_handler()
+
+        # Кнопка закрытия - ИСПРАВЛЕНО
+        close_btn = QLabel("✕")
         close_btn.setObjectName("closeBtn")
         close_btn.setAlignment(Qt.AlignCenter)
-        close_btn.setCursor(Qt.PointingHandCursor)  # Курсор-рука при наведении
-        close_btn.mousePressEvent = lambda e: self.close()  # Закрываем приложение при клике
+        close_btn.setCursor(Qt.PointingHandCursor)
+        close_btn.mouseReleaseEvent = lambda e: self.close()
 
         h_layout.addWidget(title)
-        h_layout.addStretch()  # Растяжка между заголовком и временем
+        h_layout.addStretch()
         h_layout.addWidget(self.time_label)
+        h_layout.addWidget(fullscreen_btn)
         h_layout.addWidget(close_btn)
 
         self.header.layout.addLayout(h_layout)
         self.main_layout.addWidget(self.header)
 
+    def create_fullscreen_handler(self):
+        """Создаёт обработчик для кнопки полноэкранного режима"""
+        def handler(event):
+            if self.is_fullscreen:
+                self.showNormal()
+                self.is_fullscreen = False
+            else:
+                self.showFullScreen()
+                self.is_fullscreen = True
+        return handler
+
     def _create_station(self, title, panel_idx):
-        """Создаёт панель станции с виджетом StationWidget"""
         panel = HUDPanel(title)
         station_widget = StationWidget(title, panel_idx)
         panel.content_layout.addWidget(station_widget)
         return panel
 
     def _create_graphs(self):
-        """Создаёт панель с двумя графиками"""
         panel = HUDPanel("МЕТЕОДАТЧИКИ")
         self.wind_plot = TelemetryPlotWidget("СКОРОСТЬ ВЕТРА", CYAN)
         self.sun_plot = TelemetryPlotWidget("СОЛНЕЧНАЯ АКТИВНОСТЬ", YELLOW)
 
         panel.content_layout.addWidget(self.wind_plot.title_label)
-        panel.content_layout.addWidget(self.wind_plot, stretch=1)  # stretch=1 - график растягивается
+        panel.content_layout.addWidget(self.wind_plot, stretch=1)
         panel.content_layout.addWidget(self.sun_plot.title_label)
         panel.content_layout.addWidget(self.sun_plot, stretch=1)
         return panel
 
     def set_station_param(self, station_idx, param_id, value):
-        """Устанавливает значение параметра для станции"""
         if 0 <= station_idx < len(self.stations):
             station_widget = self.stations[station_idx].content_layout.itemAt(0).widget()
             if station_widget and isinstance(station_widget, StationWidget):
                 station_widget.set_param_value(param_id, value)
 
     def load_data(self, csv_path, col_x, col_y1, col_y2):
-        self.data = pd.read_csv(csv_path, header=None)  # Читаем CSV без заголовков
+        self.data = pd.read_csv(csv_path, header=None)
         self.col_x, self.col_y1, self.col_y2 = col_x, col_y1, col_y2
         self.update_plots()
 
     def update_plots(self):
-        if self.data is None: return
-        x = self.data.iloc[:, self.col_x].values  # X-данные (время, отсчёты)
-        y1 = self.data.iloc[:, self.col_y1].values  # Y-данные для первого графика (скорость ветра)
-        y2 = self.data.iloc[:, self.col_y2].values  # Y-данные для второго графика (солнечная активность)
+        if self.data is None:
+            return
+        x = self.data.iloc[:, self.col_x].values
+        y1 = self.data.iloc[:, self.col_y1].values
+        y2 = self.data.iloc[:, self.col_y2].values
         self.wind_plot.update_data(x, y1, self.active_point_index)
         self.sun_plot.update_data(x, y2, self.active_point_index)
 
@@ -370,10 +387,9 @@ class MarsForecastApp(QMainWindow):
         self.update_plots()
 
     def update_mars_time(self):
-        self.time_label.setText(datetime.now().strftime("%H:%M:%S"))  # Обновляем время в шапке
+        self.time_label.setText(datetime.now().strftime("%H:%M:%S"))
 
     def apply_styles(self):
-        # CSS стили для всего приложения
         self.setStyleSheet(f"""
             QMainWindow {{ background-color: {APP_BG}; }}
             QWidget {{ background-color: transparent; color: {CYAN}; font-family: "DPix_8pt", monospace; }}
@@ -387,6 +403,15 @@ class MarsForecastApp(QMainWindow):
             #timeLabel {{ 
                 color: {GREEN}; font-size: 15px; font-weight: bold; padding: 0 4px;
             }}
+            
+            #fullscreenBtn {{ 
+                color: {CYAN}; 
+                font-size: 18px; 
+                background: transparent; 
+                border: none; 
+                padding: 0; margin: 0; line-height: 1;
+            }}
+            #fullscreenBtn:hover {{ color: {GREEN}; }}
             
             #closeBtn {{ 
                 color: {CYAN}; 
@@ -402,27 +427,24 @@ class MarsForecastApp(QMainWindow):
         super().paintEvent(event)
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
-        painter.fillRect(self.rect(), QColor(APP_BG))  # Заливаем фон
+        painter.fillRect(self.rect(), QColor(APP_BG))
 
-        # Рисуем внешний контур приложения
-        pen_border = QPen(QColor(CYAN), 2)  # Цвет CYAN, толщина 2px
+        pen_border = QPen(QColor(CYAN), 2)
         painter.setPen(pen_border)
-        painter.drawRect(QRectF(1, 1, self.width() - 2, self.height() - 2))  # Прямоугольник с отступом 1px
+        painter.drawRect(QRectF(1, 1, self.width() - 2, self.height() - 2))
 
-        # Рисуем фоновую сетку (дисплейный эффект)
-        pen_grid = QPen(QColor(0x8F,0xFF,0xFF,50))  # CYAN с прозрачностью 50
-        pen_grid.setWidth(1)  # Толщина 1px
+        pen_grid = QPen(QColor(0x8F,0xFF,0xFF,50))
+        pen_grid.setWidth(1)
         painter.setPen(pen_grid)
-        spacing = 20  # Шаг сетки 20px
-        for x in range(0, self.width(), spacing):  # Вертикальные линии
+        spacing = 20
+        for x in range(0, self.width(), spacing):
             painter.drawLine(x, 0, x, self.height())
-        for y in range(0, self.height(), spacing):  # Горизонтальные линии
+        for y in range(0, self.height(), spacing):
             painter.drawLine(0, y, self.width(), y)
 
-        # Рисуем скан-линии (эффект старого монитора)
-        scan_pen = QPen(QColor(0, 0, 0, 25))  # Чёрные с прозрачностью 25
+        scan_pen = QPen(QColor(0, 0, 0, 25))
         painter.setPen(scan_pen)
-        for y in range(0, self.height(), 4):  # Каждые 4px
+        for y in range(0, self.height(), 4):
             painter.drawLine(0, y, self.width(), y)
 
 # 606-649: MAIN - точка входа в программу
