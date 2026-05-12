@@ -7,7 +7,7 @@
 #include "GyverOLED.h"    // Для работы с дисплеем
 // #include "NecDecoder.h" 
 
-
+#define PAUSE 50
 #define IR_PIN 3  // Пин для подключения ИК-приемника
 
 #define DOM_ADDRESS   0x15
@@ -67,13 +67,14 @@ void loop() {
       // Отправляем данные по ИК
       for (int i = 0; i < buffer_index; i++) {
         ir.send(DOM_ADDRESS, input_buffer[i]);
-        delay(50);
+        Serial.print(input_buffer[i]);
+        delay(PAUSE);
       }
 
       // Добавляем три байта 0xFF в конец пакета
       for (int i = 0; i < 3; i++) {
         ir.send(DOM_ADDRESS, 0xFF);
-        delay(50);
+        delay(PAUSE);
       }
 
       // Отображаем на дисплее
