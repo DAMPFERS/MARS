@@ -9,6 +9,16 @@ from PyQt5.QtCore import QThread
 class SerialLoggerThread(QThread):
     """Фоновый поток для чтения данных из COM-порта и записи в CSV-лог."""
 
+    
+    # Маппинг адресов → индексы станций в GUI
+    STATION_ADDR_MAP = {
+        "0x15": 0,  # Станция МАРС-1
+        "0x16": 1,  # Станция МАРС-2
+        "0x17": 2,  # Станция МАРС-3
+        "0x18": 3   # Станция МАРС-4
+    }
+    
+    
     def __init__(self, port: str, baudrate: int = 9600, log_path: str = "logi.csv", timeout: float = 1.0):
         super().__init__()
         self.port = port
@@ -31,7 +41,7 @@ class SerialLoggerThread(QThread):
                 with open(self.log_path, 'a', newline='', encoding='utf-8') as csvfile:
                     writer = csv.writer(csvfile)
                     if is_new_file:
-                        writer.writerow(['Адрес', 'Время принятия', 'Данные'])
+                        writer.writerow(['Адрес', 'Время принятия', 'Сообщение', 'Потребление', 'Генерация'])
 
                     buffer = bytearray()
                     last_byte_time = time.time()
@@ -57,12 +67,33 @@ class SerialLoggerThread(QThread):
 
                         # Поиск конца пакета
                         if len(buffer) >= 3 and buffer[-3:] == END_PACKET:
-                            packet = buffer[:-3]
+                            packet = buffer[:-3]    # Убираем END_PACKET
                             if packet:
                                 address = packet[0]
+                                address_hex = f"0x{address:02X}"
                                 data = packet[1:]
+                                
+                                # Проверка адреса
+                                if address_hex in self.STATION_ADDR_MAP:
+                                    buffer.clear()  # Очищаем буфер для следующего пакета
+                                    continue  # Игнорируем пакеты с данными, если адрес не в маппинге
+                                
                                 timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                                writer.writerow([f"0x{address:02X}", timestamp, data.hex()])
+                                
+                                # Обработка пакета
+                                if len(data) >= 1:
+                                    if data[0] == 0xFE and len(data) >= 3:
+                                        # Пакет с потреблением и генерацией
+                                        consumption_byte = data[1]
+                                        generation_byte = data[2]
+                                        consumption = int((consumption_byte / 255) * 1000)
+                                        generation = int((generation_byte / 255) * 1000)
+                                        writer.writerow([address_hex, timestamp, "", consumption, generation])
+                                else:
+                                    # Текстовое сообщение: удаляем Start packet: и декодируем
+                                    message = data.decode("utf-8", errors='replace')
+                                    writer.writerow([address_hex, timestamp, message, "", ""])
+                                
                                 csvfile.flush()  # Гарантируем запись на диск для чтения из main
                             buffer.clear()
 
@@ -79,3 +110,6 @@ class SerialLoggerThread(QThread):
         # timeout=1 гарантирует, что read(1) вернёт b'' максимум через 1 сек,
         # после чего цикл проверит stop_flag и корректно выйдет.
         self.wait(2000)
+        
+if __name__ == "__main__":
+    passs

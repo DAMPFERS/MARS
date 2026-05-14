@@ -8,7 +8,7 @@ from PyQt5.QtCore import QTimer
 import threading
 import io
 from contextlib import redirect_stdout
-
+from typing import List, Dict
 
 from GUI import GUI_MCC
 from Reciver import serial_logger
@@ -37,33 +37,66 @@ STATION_ADDR_MAP = {
 
 def parseLatestConsumption(log_path: Path) -> dict:
     """
-    Читает CSV-лог и возвращает dict {station_idx: consumption_value}.
-    Если записи для станции нет, значение считается равным 0.
+    Читает CSV-лог и возвращает список словарей для каждой станции.
+    Индекс списка соответствует индексу станции в STATION_ADDR_MAP.
+    Каждый словарь содержит ключи: "потребление", "генерация", "сообщение".
 
     Args:
-        log_path (Path): Путь к файлу с логаими
+        log_path (Path): Путь к файлу с логами.
 
     Returns:
-        dict: _description_
+        List[Dict[str, str | float]]: Список словарей с данными для каждой станции.
     """
     
-    latest = {idx: 0 for idx in STATION_ADDR_MAP.values()}  # Инициализируем нулями
+    # Инициализируем результат: для каждой станции словарь с нулевыми значениями
+    result = [ {
+        {"потребление": 0, "генерация": 0, "сообщение": ""}
+        for _ in STATION_ADDR_MAP
+    }]
+    
     if not log_path.exists():
-        return latest  # Если файл не существует, возвращаем нули
+        return result  # Если файл не существует, возвращаем нули
+    
+    
+    
+    # latest = {idx: 0 for idx in STATION_ADDR_MAP.values()}  # Инициализируем нулями
     
     with open(log_path, 'r', encoding="utf-8") as f:
         reader = csv.DictReader(f)
-        for row in reader:
+        rows = list(reader)  # Чтение всех строк для поиска последних записей (обычно не очень большой файл)
+        
+        # Проходим по всем строкам и обновляем последние значения для каждой станции
+        for row in rows:
             addr = row.get("Адрес", '').strip()
-            if addr in STATION_ADDR_MAP:
-                data_hex = row.get("Данные", '').strip()
-                # 1-й байт = первые 2 символа hex-строки
-                if len(data_hex) >= 2:
-                    try:
-                        latest[STATION_ADDR_MAP[addr]] = int(data_hex[:2], 16)
-                    except ValueError:
-                        latest[STATION_ADDR_MAP[addr]] = 0  # Если не удалось распарсить, считаем 0
-    return latest
+            
+            if addr not in STATION_ADDR_MAP:
+                continue  # Если адрес не распознан, пропускаем
+            
+            station_idx = STATION_ADDR_MAP[addr]
+            
+            # Обновляем сообщение, если оно есть
+            message = row.get("Сообщение", '').strip()
+            if message:
+                result[station_idx]["сообщение"] = message
+                
+            # Обновляем потребление и генерацию, если они есть
+            consumption = row.get("Потребление", '').strip()
+            generation = row.get("Генерация", '').strip()
+            
+            if consumption:
+                try:
+                    result[station_idx]["потребление"] = int(consumption)
+                except ValueError:
+                    result[station_idx]["потребление"] = 0  # Если не число, оставляем 0
+            if generation:
+                try:
+                    result[station_idx]["генерация"] = int(generation)
+                except ValueError:
+                    result[station_idx]["генерация"] = 0  # Если не число, оставляем 0
+            
+        return result    
+            
+            
                 
 def _sendWeatherTask(sun_val: int, wind_val: int) -> None:
     """Изолированная задача отправки погоды. Не трогает Qt, не блокирует stdout."""
