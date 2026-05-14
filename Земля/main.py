@@ -128,9 +128,9 @@ def main() -> None:
     window.load_data(str(WEATHER_CSV), col_x=0, col_y1=1, col_y2=2)
     
     # 3. Запуск фонового потока чтения порта
-    # logger = serial_logger.SerialLogger(port=COM_PORT, baudrate=9600, log_path=str(LOG_PATH))      
-    # logger.start()        
-    # print(f"[Main] Поток чтения запущен (порт: {COM_PORT}, лог: {LOG_PATH})")      
+    logger = serial_logger.SerialLogger(port=COM_PORT, baudrate=9600, log_path=str(LOG_PATH))      
+    logger.start()        
+    print(f"[Main] Поток чтения запущен (порт: {COM_PORT}, лог: {LOG_PATH})")      
 
     # 4. Таймер обновления GUI (каждые 10 секунд)
     update_timer = QTimer()
@@ -151,11 +151,19 @@ def main() -> None:
         window.set_active_point(current_idx)
         window.update_plots()
         
-        # --- Обновление потребления из логов ---
-        # consumptions = parseLatestConsumption(LOG_PATH)
-        # for idx, val in consumptions.items():
-        #     window.set_station_param(idx, param_id=0, value=str(val))  # param_id=0 для потребления
-        
+        # --- Обновление UI из логов ---
+        log_data = parseLatestConsumption(LOG_PATH)
+        for idx in range(len(log_data)):
+            station_data = log_data[idx]
+            consumption = station_data.get("потребление", 0)
+            generation = station_data.get("генерация", 0)
+            message = station_data.get("сообщение", "")
+            
+            window.set_station_param(idx, param_id=0, value=str(consumption))  # param_id=0 для потребления
+            window.set_station_param(idx, param_id=1, value=str(generation))   # param_id=1 для генерации
+            # window.set_station_param(idx, param_id=2, value=message)          # param_id=2 для сообщения
+             
+                
         # Безопасная отправка погоды (ТОЛЬКО если предыдущая закончилась)
         
         if (window.data is not None) and (not _is_weather_busy):
@@ -208,7 +216,7 @@ def main() -> None:
     # 5. Корректная обработка закрытия окна
     def cleanup():
         print("Завершение приложения...")
-        # logger.stop()  # Остановка потока чтения порта
+        logger.stop()  # Остановка потока чтения порта
     
     app.aboutToQuit.connect(cleanup)
     

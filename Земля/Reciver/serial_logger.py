@@ -89,10 +89,10 @@ class SerialLoggerThread(QThread):
                                         consumption = int((consumption_byte / 255) * 1000)
                                         generation = int((generation_byte / 255) * 1000)
                                         writer.writerow([address_hex, timestamp, "", consumption, generation])
-                                else:
-                                    # Текстовое сообщение: удаляем Start packet: и декодируем
-                                    message = data.decode("utf-8", errors='replace')
-                                    writer.writerow([address_hex, timestamp, message, "", ""])
+                                    else:
+                                        # Текстовое сообщение: удаляем Start packet: и декодируем
+                                        message = data.decode("utf-8", errors='replace')
+                                        writer.writerow([address_hex, timestamp, message, "", ""])
                                 
                                 csvfile.flush()  # Гарантируем запись на диск для чтения из main
                             buffer.clear()
@@ -112,4 +112,4 @@ class SerialLoggerThread(QThread):
         self.wait(2000)
         
 if __name__ == "__main__":
-    passs
+    pass
