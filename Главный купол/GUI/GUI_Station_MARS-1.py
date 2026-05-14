@@ -19,11 +19,11 @@ RED = "#FF4D4D"
 DARK_CYAN = "rgba(143, 255, 255, 30)"
 ROW_BG = "rgba(5, 10, 20, 100)"
 
-# Унифицированные стили шрифтов
-FONT_LABEL = "color: rgba(143,255,255,160); font-size: 10px;"
-FONT_VALUE = "color: #00FF9D; font-size: 11px; font-weight: bold;"
-FONT_UNIT  = "color: rgba(143,255,255,120); font-size: 9px;"
-FONT_TITLE = "color: #8FFFFF; font-size: 11px; font-weight: bold;"
+# Унифицированные стили шрифтов (УВЕЛИЧЕНЫ НА 1 ШАГ, ЦВЕТ ПОДПИСЕЙ = CYAN)
+FONT_LABEL = f"color: {CYAN}; font-size: 11px;"
+FONT_VALUE = f"color: {GREEN}; font-size: 12px; font-weight: bold;"
+FONT_UNIT  = f"color: {CYAN}; font-size: 10px;"
+FONT_TITLE = f"color: {CYAN}; font-size: 12px; font-weight: bold;"
 
 # 35-75: КЛАСС HUD PANEL
 class HUDPanel(QFrame):
@@ -80,7 +80,7 @@ class ChargeBarWidget(QWidget):
         super().__init__()
         self.level = 0.0
         self.label = label
-        self.setMinimumHeight(26)
+        self.setMinimumHeight(28)
 
     def set_level(self, value):
         self.level = max(0.0, min(1.0, value))
@@ -114,18 +114,19 @@ class ChargeBarWidget(QWidget):
             x = 3 + (w - 6) * (i / 10)
             painter.drawLine(int(x), 3, int(x), int(h - 3))
 
+        # УВЕЛИЧЕННЫЕ ШРИФТЫ
         painter.setPen(QColor(255, 255, 255, 220))
         font = painter.font()
-        font.setPixelSize(10); font.setBold(False)
+        font.setPixelSize(11); font.setBold(False)
         painter.setFont(font)
         painter.drawText(QRectF(6, 0, w * 0.4, h), Qt.AlignVCenter | Qt.AlignLeft, self.label)
 
         painter.setPen(QColor(255, 255, 255, 250))
-        font.setBold(True); font.setPixelSize(11)
+        font.setBold(True); font.setPixelSize(12)
         painter.setFont(font)
         painter.drawText(QRectF(w * 0.4, 0, w * 0.6 - 6, h), Qt.AlignVCenter | Qt.AlignRight, f"{self.level * 100:.0f}%")
 
-# === СОСТОЯНИЕ СТАНЦИИ (ФИКСИРОВАННАЯ ПО КОНТЕНТУ ВЫСОТА) ===
+# === СОСТОЯНИЕ СТАНЦИИ (TITLE CASE, CYAN ЦВЕТ) ===
 class StationStatusWidget(QWidget):
     def __init__(self):
         super().__init__()
@@ -140,23 +141,25 @@ class StationStatusWidget(QWidget):
         f_layout.setContentsMargins(8, 6, 8, 6)
         f_layout.setSpacing(4)
 
-        metrics = [("ДАВЛЕНИЕ", "кПа"), ("КИСЛОРОД", "%"), ("УГЛЕКИСЛЫЙ ГАЗ", "ppm"), ("ГЕРМЕТИЧНОСТЬ", "%"), ("ТЕМПЕРАТУРА", "°C")]
+        # Заголовки с заглавной буквы
+        metrics = [("Давление", "кПа"), ("Кислород", "%"), ("Углекислый газ", "ppm"), ("Герметичность", "%"), ("Температура", "°C")]
         for name, unit in metrics:
             r = QHBoxLayout()
             r.setContentsMargins(4, 2, 4, 2)
             r.addWidget(QLabel(f"{name}:", styleSheet=FONT_LABEL))
-            lbl_val = QLabel("0")
-            lbl_val.setStyleSheet(FONT_VALUE)
-            lbl_val.setAlignment(Qt.AlignRight)
-            r.addWidget(lbl_val)
+            r.addStretch()
+            lbl_v = QLabel("0")
+            lbl_v.setStyleSheet(FONT_VALUE)
+            lbl_v.setAlignment(Qt.AlignRight)
+            r.addWidget(lbl_v)
             r.addWidget(QLabel(unit, styleSheet=FONT_UNIT))
             f_layout.addLayout(r)
-            self.labels[name] = lbl_val
+            self.labels[name] = lbl_v
 
         main_layout.addWidget(frame)
         main_layout.addStretch()
 
-# === МОДУЛЬ СВЯЗИ (ВЫСОТА ПО ТЕКСТУ) ===
+# === МОДУЛЬ СВЯЗИ ===
 class CommsDetailWidget(QWidget):
     def __init__(self):
         super().__init__()
@@ -184,6 +187,7 @@ class CommsDetailWidget(QWidget):
             r = QHBoxLayout()
             r.setContentsMargins(4, 2, 4, 2)
             r.addWidget(QLabel(f"{name}:", styleSheet=FONT_LABEL))
+            r.addStretch()
             val = QLabel(def_val)
             val.setStyleSheet(FONT_VALUE)
             val.setAlignment(Qt.AlignRight)
@@ -193,11 +197,49 @@ class CommsDetailWidget(QWidget):
             f_layout.addLayout(r)
             self.labels[name] = val
 
-        # Убрано stretch=1. Высота строго по контенту.
         layout.addWidget(frame)
         layout.addStretch()
 
-# === ЭНЕРГОСИСТЕМА (Генерация → Накопители → Потребление) ===
+# === МАРСОХОД (ВОДОРОДНАЯ СИСТЕМА) ===
+class RoverDetailWidget(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.labels = {}
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+
+        frame = QFrame()
+        frame.setStyleSheet("background: rgba(0,0,0,60); border: 1px solid rgba(143,255,255,25); border-radius: 3px;")
+        f_layout = QVBoxLayout(frame)
+        f_layout.setContentsMargins(6, 5, 6, 5)
+        f_layout.setSpacing(2)
+
+        params = [
+            ("Уровень H₂", "0", "%"),
+            ("Давление в системе", "0", "МПа"),
+            ("Температура ячейки", "0", "°C"),
+            ("Выходная мощность", "0", "кВт"),
+            ("Запас хода", "0", "км"),
+            ("Статус привода", "Активен", "")
+        ]
+        for name, def_val, unit in params:
+            r = QHBoxLayout()
+            r.setContentsMargins(4, 2, 4, 2)
+            r.addWidget(QLabel(f"{name}:", styleSheet=FONT_LABEL))
+            r.addStretch()
+            val = QLabel(def_val)
+            val.setStyleSheet(FONT_VALUE)
+            val.setAlignment(Qt.AlignRight)
+            r.addWidget(val)
+            if unit:
+                r.addWidget(QLabel(unit, styleSheet=FONT_UNIT))
+            f_layout.addLayout(r)
+            self.labels[name] = val
+
+        layout.addWidget(frame)
+        layout.addStretch()
+
+# === ЭНЕРГОСИСТЕМА ===
 class EnergyDetailWidget(QWidget):
     def __init__(self):
         super().__init__()
@@ -215,15 +257,14 @@ class EnergyDetailWidget(QWidget):
         gen_main.setContentsMargins(8, 6, 8, 6)
         gen_main.setSpacing(5)
 
-        gen_main.addWidget(QLabel("ГЕНЕРАЦИЯ (СОЛНЕЧНЫЕ ПАНЕЛИ)", styleSheet=FONT_TITLE).setAlignment(Qt.AlignCenter) or QLabel("ГЕНЕРАЦИЯ (СОЛНЕЧНЫЕ ПАНЕЛИ)", styleSheet=FONT_TITLE))
-        gen_title = QLabel("ГЕНЕРАЦИЯ (СОЛНЕЧНЫЕ ПАНЕЛИ)")
+        gen_title = QLabel("Генерация (Солнечные панели)")
         gen_title.setStyleSheet(FONT_TITLE)
         gen_title.setAlignment(Qt.AlignCenter)
         gen_main.addWidget(gen_title)
 
         gen_h = QHBoxLayout()
         gen_h.setSpacing(8)
-        for block in ["БЛОК А", "БЛОК Б"]:
+        for block in ["Блок А", "Блок Б"]:
             b_frame = QFrame()
             b_frame.setStyleSheet("background: rgba(0,0,0,80); border: 1px solid rgba(143,255,255,25); border-radius: 3px;")
             b_layout = QVBoxLayout(b_frame)
@@ -231,7 +272,7 @@ class EnergyDetailWidget(QWidget):
             b_layout.setSpacing(2)
 
             b_lbl = QLabel(block)
-            b_lbl.setStyleSheet(f"color: {YELLOW}; font-size: 10px; font-weight: bold; border-bottom: 1px solid rgba(143,255,255,40); padding-bottom: 3px;")
+            b_lbl.setStyleSheet(f"color: {YELLOW}; font-size: 11px; font-weight: bold; border-bottom: 1px solid rgba(143,255,255,40); padding-bottom: 3px;")
             b_lbl.setAlignment(Qt.AlignCenter)
             b_layout.addWidget(b_lbl)
 
@@ -248,7 +289,7 @@ class EnergyDetailWidget(QWidget):
 
         total_gen_layout = QHBoxLayout()
         total_gen_layout.setContentsMargins(4, 2, 4, 2)
-        total_gen_layout.addWidget(QLabel("ОБЩАЯ ГЕНЕРАЦИЯ:", styleSheet=FONT_LABEL))
+        total_gen_layout.addWidget(QLabel("Общая генерация:", styleSheet=FONT_LABEL))
         total_gen_layout.addStretch()
         self.labels["total_gen"] = QLabel("0.00 МВт")
         self.labels["total_gen"].setStyleSheet(FONT_VALUE)
@@ -264,21 +305,21 @@ class EnergyDetailWidget(QWidget):
         acc_layout.setContentsMargins(8, 6, 8, 6)
         acc_layout.setSpacing(5)
 
-        acc_title = QLabel("НАКОПИТЕЛИ ЭНЕРГИИ")
+        acc_title = QLabel("Накопители энергии")
         acc_title.setStyleSheet(FONT_TITLE)
         acc_title.setAlignment(Qt.AlignCenter)
         acc_layout.addWidget(acc_title)
 
         self.charge_bars = []
         for i in range(3):
-            bar = ChargeBarWidget(f"НАК. #{i+1}")
+            bar = ChargeBarWidget(f"Нак. #{i+1}")
             bar.set_level(0.85 - i * 0.15)
             self.charge_bars.append(bar)
             acc_layout.addWidget(bar)
 
         total_acc_layout = QHBoxLayout()
         total_acc_layout.setContentsMargins(4, 2, 4, 2)
-        total_acc_layout.addWidget(QLabel("ОБЩИЙ ЗАРЯД:", styleSheet=FONT_LABEL))
+        total_acc_layout.addWidget(QLabel("Общий заряд:", styleSheet=FONT_LABEL))
         total_acc_layout.addStretch()
         self.labels["total_acc"] = QLabel("0 МВт·ч")
         self.labels["total_acc"].setStyleSheet(FONT_VALUE)
@@ -293,7 +334,7 @@ class EnergyDetailWidget(QWidget):
         con_main_layout.setContentsMargins(8, 6, 8, 6)
         con_main_layout.setSpacing(4)
 
-        con_title = QLabel("ПОТРЕБЛЕНИЕ ПО МОДУЛЯМ")
+        con_title = QLabel("Потребление по модулям")
         con_title.setStyleSheet(FONT_TITLE)
         con_title.setAlignment(Qt.AlignCenter)
         con_main_layout.addWidget(con_title)
@@ -304,7 +345,7 @@ class EnergyDetailWidget(QWidget):
         inner_layout.setContentsMargins(6, 5, 6, 5)
         inner_layout.setSpacing(2)
 
-        consumers = ["ЖИЛОЙ", "СВЯЗИ", "ЭНЕРГЕТИЧЕСКИЙ", "ЦЕНТРАЛЬНЫЙ"]
+        consumers = ["Жилой", "Связи", "Энергетический", "Центральный"]
         for i, name in enumerate(consumers):
             r = QHBoxLayout()
             r.setContentsMargins(4, 2, 4, 2)
@@ -322,7 +363,7 @@ class EnergyDetailWidget(QWidget):
         
         total_con_layout = QHBoxLayout()
         total_con_layout.setContentsMargins(4, 2, 4, 2)
-        total_con_layout.addWidget(QLabel("ОБЩЕЕ ПОТРЕБЛЕНИЕ:", styleSheet=FONT_LABEL))
+        total_con_layout.addWidget(QLabel("Общее потребление:", styleSheet=FONT_LABEL))
         total_con_layout.addStretch()
         self.labels["total_cons"] = QLabel("0.00 МВт")
         self.labels["total_cons"].setStyleSheet(FONT_VALUE)
@@ -381,22 +422,26 @@ class Mars1App(QMainWindow):
         left_layout.setContentsMargins(0, 0, 0, 0)
         left_layout.setSpacing(5)
 
+        # Заголовки панелей остаются КАПСОМ
         self.status_panel = HUDPanel("СОСТОЯНИЕ СТАНЦИИ")
-        self.comm_panel = HUDPanel("СВЯЗЬ")  # ЗАМЕНЕНО НА КАПС
+        self.comm_panel = HUDPanel("СВЯЗЬ")
+        self.rover_panel = HUDPanel("МАРСОХОД")
         self.energy_panel = HUDPanel("ЭНЕРГОСИСТЕМА")
 
         self.status_widget = StationStatusWidget()
         self.comm_widget = CommsDetailWidget()
+        self.rover_widget = RoverDetailWidget()
         self.energy_widget = EnergyDetailWidget()
 
         self.status_panel.content_layout.addWidget(self.status_widget)
         self.comm_panel.content_layout.addWidget(self.comm_widget)
+        self.rover_panel.content_layout.addWidget(self.rover_widget)
         self.energy_panel.content_layout.addWidget(self.energy_widget, stretch=1)
 
-        # stretch=0 для обоих верхних блоков -> высота строго по тексту
         left_layout.addWidget(self.status_panel, stretch=0)
         left_layout.addWidget(self.comm_panel, stretch=0)
-        left_layout.addStretch()  # Прижимает блоки к верху, свободное место остаётся снизу
+        left_layout.addWidget(self.rover_panel, stretch=0)
+        left_layout.addStretch()
 
         content_layout.addWidget(left_col, 1)
         content_layout.addWidget(self.energy_panel, 1)
@@ -471,7 +516,7 @@ class Mars1App(QMainWindow):
 
         # ГЕНЕРАЦИЯ
         total_gen = 0
-        for block in ["БЛОК А", "БЛОК Б"]:
+        for block in ["Блок А", "Блок Б"]:
             block_total = 0
             for i in range(6):
                 val = 1.4 + np.random.uniform(0.3, 1.1)
@@ -480,13 +525,13 @@ class Mars1App(QMainWindow):
             total_gen += block_total
         self.energy_widget.labels["total_gen"].setText(f"{total_gen:.2f} МВт")
 
-        # ПОТРЕБЛЕНИЕ
+        # ПОТРЕБЛЕНИЕ (УВЕЛИЧЕННЫЙ ШРИФТ В УСЛОВИИ)
         total_cons = 0
         for i in range(4):
             val = 3.2 + i * 0.8 + np.random.uniform(-0.15, 0.15)
             self.energy_widget.labels[f"cons_{i}"].setText(f"{val:.2f}")
             col = "#FF4D4D" if val > 5.0 else "#FFB800" if val > 4.2 else "#00FF9D"
-            self.energy_widget.labels[f"cons_{i}"].setStyleSheet(f"color: {col}; font-size: 11px; font-weight: bold;")
+            self.energy_widget.labels[f"cons_{i}"].setStyleSheet(f"color: {col}; font-size: 12px; font-weight: bold;")
             total_cons += val
         self.energy_widget.labels["total_cons"].setText(f"{total_cons:.2f} МВт")
 
@@ -502,23 +547,37 @@ class Mars1App(QMainWindow):
         self.comm_widget.labels["Время сеанса"].setText(f"{h:02}:{m:02}:{s:02}")
         st = self.comm_widget.labels["Статус линка"]
         st.setText("ONLINE")
-        st.setStyleSheet(f"color: {GREEN}; font-size: 11px; font-weight: bold;")
+        st.setStyleSheet(f"color: {GREEN}; font-size: 12px; font-weight: bold;")
+
+        # МАРСОХОД (УВЕЛИЧЕННЫЙ ШРИФТ В УСЛОВИИ)
+        h2_level = 85.5 + np.random.uniform(-2, 2)
+        self.rover_widget.labels["Уровень H₂"].setText(f"{h2_level:.1f}")
+        h2_lbl = self.rover_widget.labels["Уровень H₂"]
+        h2_lbl.setStyleSheet(f"color: {'#FF4D4D' if h2_level < 20 else '#00FF9D'}; font-size: 12px; font-weight: bold;")
+        
+        self.rover_widget.labels["Давление в системе"].setText(f"{35.0 + np.random.uniform(-0.5, 0.5):.1f}")
+        self.rover_widget.labels["Температура ячейки"].setText(f"{82 + np.random.uniform(-3, 3):.0f}")
+        self.rover_widget.labels["Выходная мощность"].setText(f"{12.4 + np.random.uniform(-0.8, 0.8):.1f}")
+        self.rover_widget.labels["Запас хода"].setText(f"{240 + np.random.randint(-5, 5)}")
+        r_st = self.rover_widget.labels["Статус привода"]
+        r_st.setText("Активен")
+        r_st.setStyleSheet(f"color: {GREEN}; font-size: 12px; font-weight: bold;")
 
         # СОСТОЯНИЕ СТАНЦИИ
-        self.status_widget.labels["ДАВЛЕНИЕ"].setText(f"{6.2 + np.random.uniform(-0.1, 0.1):.2f}")
-        self.status_widget.labels["КИСЛОРОД"].setText(f"{21.0 + np.random.uniform(-0.5, 0.5):.1f}")
-        self.status_widget.labels["УГЛЕКИСЛЫЙ ГАЗ"].setText(f"{420 + np.random.randint(-15, 15)}")
-        self.status_widget.labels["ГЕРМЕТИЧНОСТЬ"].setText(f"{99.8 + np.random.uniform(-0.2, 0.2):.1f}")
-        self.status_widget.labels["ТЕМПЕРАТУРА"].setText(f"{22.5 + np.random.uniform(-1, 1):.1f}")
+        self.status_widget.labels["Давление"].setText(f"{6.2 + np.random.uniform(-0.1, 0.1):.2f}")
+        self.status_widget.labels["Кислород"].setText(f"{21.0 + np.random.uniform(-0.5, 0.5):.1f}")
+        self.status_widget.labels["Углекислый газ"].setText(f"{420 + np.random.randint(-15, 15)}")
+        self.status_widget.labels["Герметичность"].setText(f"{99.8 + np.random.uniform(-0.2, 0.2):.1f}")
+        self.status_widget.labels["Температура"].setText(f"{22.5 + np.random.uniform(-1, 1):.1f}")
 
     def apply_styles(self):
         self.setStyleSheet(f"""
             QMainWindow {{ background-color: {APP_BG}; }}
             QWidget {{ background-color: transparent; color: {CYAN}; font-family: "DPix_8pt", monospace; }}
             #hudPanel {{ background-color: {PANEL_BG}; border: 1px solid rgba(143,255,255,70); border-radius: 8px; }}
-            #panelTitle {{ color: {CYAN}; font-size: 12px; font-weight: bold; letter-spacing: 0.5px; }}
-            #mainTitle {{ color: {CYAN}; font-size: 15px; font-weight: bold; letter-spacing: 1px; }}
-            #timeLabel {{ color: {GREEN}; font-size: 14px; font-weight: bold; padding: 0 4px; }}
+            #panelTitle {{ color: {CYAN}; font-size: 13px; font-weight: bold; letter-spacing: 0.5px; }}
+            #mainTitle {{ color: {CYAN}; font-size: 16px; font-weight: bold; letter-spacing: 1px; }}
+            #timeLabel {{ color: {GREEN}; font-size: 15px; font-weight: bold; padding: 0 4px; }}
             #fullscreenBtn {{ color: {CYAN}; font-size: 18px; background: transparent; border: none; padding: 0; margin: 0; line-height: 1; }}
             #fullscreenBtn:hover {{ color: {GREEN}; }}
             #closeBtn {{ color: {CYAN}; font-size: 16px; background: transparent; border: none; padding: 0; margin: 0; line-height: 1; }}
