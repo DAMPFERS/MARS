@@ -12,7 +12,7 @@ from contextlib import redirect_stdout
 
 from GUI import GUI_MCC
 from Reciver import serial_logger
-from Weather import Weather_controller
+from weather import Weather_controller
 
 
 # ─── Защита от наложения и блокировок stdout ───
