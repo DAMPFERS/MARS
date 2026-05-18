@@ -36,6 +36,29 @@ void setup() {
 }
 
 void loop() {
+  // uint8_t c = 0x15;
+  // while(1) {
+  //   Serial.print("Start packet:");
+  //   Serial.write(c);
+  //   Serial.println("HELLO WORLD!");
+  //   Serial.write(0xff);
+  //   Serial.write(0xff);
+  //   Serial.write(0xff);
+  //   delay(2000);
+
+  //   Serial.print("Start packet:");
+  //   Serial.write(c);
+  //   Serial.write(0xfe);
+  //   Serial.write(0x71);
+  //   Serial.write(0x1a);
+  //   Serial.write(0xff);
+  //   Serial.write(0xff);
+  //   Serial.write(0xff);
+  //   delay(2000);
+
+  //   c = c == 0x18 ? 0x15 : c + 1;
+  // }
+
   static uint8_t start_packet_flags = false; // Флаг для отслеживания начала пакета
   static uint8_t ff_counter = 0; // Счетчик для отслеживания количества подряд идущих 0xFF
   static uint32_t timer = 0; // Таймер для отслеживания времени между пакетами

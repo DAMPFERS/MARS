@@ -74,7 +74,7 @@ class SerialLoggerThread(QThread):
                                 data = packet[1:]
                                 
                                 # Проверка адреса
-                                if address_hex in self.STATION_ADDR_MAP:
+                                if address_hex not in self.STATION_ADDR_MAP:
                                     buffer.clear()  # Очищаем буфер для следующего пакета
                                     continue  # Игнорируем пакеты с данными, если адрес не в маппинге
                                 
@@ -112,4 +112,25 @@ class SerialLoggerThread(QThread):
         self.wait(2000)
         
 if __name__ == "__main__":
+    import time
+    # Создаем логгер
+    logger = SerialLoggerThread(
+        port="COM13",
+        baudrate=9600,
+        log_path="logi.csv",
+        timeout=1.0
+    )
+    
+    # Запускаем
+    print("Запуск логгера...")
+    logger.start()
+    
+    # Ждем 30 секунд или пока пользователь не нажмет Enter
+    print("Логгер будет работать 30 секунд...")
+    time.sleep(30)
+    
+    # Останавливаем
+    print("Остановка логгера...")
+    logger.stop()
+    
     pass

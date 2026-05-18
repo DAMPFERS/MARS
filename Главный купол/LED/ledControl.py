@@ -176,6 +176,8 @@ if __name__ == "__main__":
     
     # Установка цвета для секции 0 (красный)
     strip.set_section_color(section_index=0, color=(255, 0, 0))
+    strip.set_section_color(section_index=1, color=(0, 255, 0))
+    strip.set_section_color(section_index=2, color=(0, 0, 255))
     
     # Установка яркости для секции 0 (50%)
     strip.set_section_brightness(section_index=0, brightness=128)
