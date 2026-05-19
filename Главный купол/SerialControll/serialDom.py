@@ -119,7 +119,7 @@ class DeviceManager:
             if not self._ensurePortOpen(self._ser1, self.port1):
                 return False
             try:
-                packet = data + b'\xFF\xFF\xFF'
+                packet = b'\xFE' + data + b'\xFF\xFF\xFF'
                 self._ser1.write(packet)
                 return True
             except serial.SerialException as e:
@@ -166,7 +166,7 @@ class DeviceManager:
 
 if __name__ == "__main__":
     # Инициализация
-    manager = DeviceManager(port1='COM11', port2='COM13', baudrate=9600, timeout=1.0)
+    manager = DeviceManager(port1='/dev/ttyACM0', port2='/dev/ttyACM1', baudrate=9600, timeout=1.0)
     manager.sendToDeviceCommunication(b'\x01\x02\x03')  # Пример отправки данных в купол связи
     manager.sendToDeviceSolarPanels(45, 90)  # Пример отправки углов в купол энергетики
     

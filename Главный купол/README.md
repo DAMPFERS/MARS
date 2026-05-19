@@ -2,7 +2,7 @@
 
 Проверка подключенных ком-порт устройств:  ls /dev/tty*
 Искать: /dev/ttyACM0
-
+pip3 install PyQt5 --break-system-packages
 
 
 # --- Установка библиотек Python ---

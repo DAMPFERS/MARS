@@ -164,7 +164,7 @@ class LEDStrip:
     def clear(self):
         """Отключение всех светодиодов."""
         for i in range(self.num_leds):
-            if self.led_type = "RGBW":  self.strip.setPixelColor(i, Color(0, 0, 0, 0))
+            if self.led_type == "RGBW":  self.strip.setPixelColor(i, Color(0, 0, 0, 0))
             else:                       self.strip.setPixelColor(i, Color(0, 0, 0))
         self.strip.show()
 
@@ -184,4 +184,6 @@ if __name__ == "__main__":
     
     # Применение изменений
     strip.show()
+    #import time
+    #time.sleep(10)
     
