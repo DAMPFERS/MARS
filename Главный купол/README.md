@@ -1,5 +1,10 @@
 # Главный купол
 
+Проверка подключенных ком-порт устройств:  ls /dev/tty*
+Искать: /dev/ttyACM0
+
+
+
 # --- Установка библиотек Python ---
 echo "Установка библиотек Python (PyQt5, pyqtgraph, pyserial)..."
 sudo apt-get update
