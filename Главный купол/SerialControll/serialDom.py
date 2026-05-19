@@ -6,41 +6,43 @@ from typing import Optional,Tuple
 class ListenerThread(QThread):
     """Фоновый поток для чтения данных из COM-порта второго устройства."""
     
-    def __init__(self, port: str, baudrate: int = 9600, timeout: float = 1.0):
+    def __init__(self, ser: serial.Serial, timeout: float = 1.0):
         super().__init__()
-        self.port = port
-        self.baudrate = baudrate
+        self._ser = ser  # Используем уже открытый порт
         self.timeout = timeout
         self.stop_flag = False
-        self._ser = None
         self.last_data: Optional[Tuple[int, ...]] = None  # Хранит последние распарсенные данные
         self.mutex = QMutex()  # Мьютекс для защиты доступа к last_data
         
         
     def run(self) -> None:
         try:
-            with serial.Serial(self.port, self.baudrate, timeout=self.timeout) as self._ser:
-                buffer = bytearray()
-                while not self.stop_flag:
-                    byte = self._ser.read(1)
-                    if not byte:
-                        self.msleep(1)
-                        continue
+            
+            buffer = bytearray()
+            while not self.stop_flag:
+                byte = self._ser.read(1)
+                if not byte:
+                    self.msleep(1)
+                    continue
                     
-                    buffer.extend(byte)
+                buffer.extend(byte)
                 
-                    if b'\n' in buffer:
-                        line = buffer.split(b'\n')[0].decode('utf-8', errors='replace').strip()
-                        buffer = buffer[len(line.decode('utf-8')) + 1:]  # Удаляем обработанную строку из буфера
+                if b'\n' in buffer:
+                    line = buffer.split(b'\n')[0].decode('utf-8', errors='replace').strip()
+                    buffer = buffer[len(line.encode('utf-8')) + 1:]  # Удаляем обработанную строку из буфера
+                    
+                    line = line[:-1]
+                    
+                    # Парсим строку с 6 числами
+                    
+                    try:
+                        numbers = list(map(int, line.split(';')))
 
-                        # Парсим строку с 6 числами
-                        try:
-                            numbers = list(map(int, line.split(';')))
-                            if len(numbers) == 6:
-                                with QMutexLocker(self.mutex):
-                                    self.last_data = tuple(numbers)  # Сохраняем последние данные
-                        except (ValueError, IndexError):
-                            continue # Игнорируем некорректные данные
+                        if len(numbers) == 6:
+                            with QMutexLocker(self.mutex):
+                                self.last_data = tuple(numbers)  # Сохраняем последние данные
+                    except (ValueError, IndexError):
+                        continue # Игнорируем некорректные данные
         except serial.SerialException as e:
             print(f"[ListenerThread] Ошибка при открытии COM-порта: {e}")
         except Exception as e:
@@ -66,11 +68,14 @@ class DeviceManager:
         self._ser2 = None
         self.mutex1 = QMutex()  # Мьютекс для первого порта
         self.mutex2 = QMutex()  # Мьютекс для второго порта
-        self.listener_thread = ListenerThread(port2, baudrate, timeout)
-        
         
         #  Открываем порты при инициализации
-        self._open_ports()
+        self._openPorts()
+        
+        
+        self.listener_thread = ListenerThread(self._ser2, timeout)
+        
+        
         
         # Запускаем поток чтения
         self.listener_thread.start()
@@ -161,14 +166,21 @@ class DeviceManager:
 
 if __name__ == "__main__":
     # Инициализация
-    manager = DeviceManager(port1='COM3', port2='COM4', baudrate=9600, timeout=1.0)
+    manager = DeviceManager(port1='COM11', port2='COM13', baudrate=9600, timeout=1.0)
     manager.sendToDeviceCommunication(b'\x01\x02\x03')  # Пример отправки данных в купол связи
     manager.sendToDeviceSolarPanels(45, 90)  # Пример отправки углов в купол энергетики
     
-    last_data = manager.getLastDataSolarPanels()
-    if last_data:
-        print(f"Последние данные от купола энергетики: {last_data}")
-    else:
-        print("Нет данных от купола энергетики.")
+    import time
+    i = 0
+    while i < 10:
+        time.sleep(1) 
+        manager.sendToDeviceCommunication(b'\x01\x02\x03')  # Пример отправки данных в купол связи
+        manager.sendToDeviceSolarPanels(45, 90)  # Пример отправки углов в купол энергетики   
+        last_data = manager.getLastDataSolarPanels()
+        if last_data:
+            print(f"Последние данные от купола энергетики: {last_data}")
+        else:
+            print("Нет данных от купола энергетики.")
+        i += 1
         
     manager.stop()
