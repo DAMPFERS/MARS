@@ -42,10 +42,10 @@ void loop() {
     uint16_t adc_value[6];
     for (int i = 0; i < 6; i++) {
       adc_value[i] = analogRead(adc_name[i]); // Читаем значение с аналогового входа
-      Serial.write((adc_value[i] >> 8) & 0xFF); // Отправляем старший байт
-      Serial.write(adc_value[i] & 0xFF);        // Отправляем младший байт
+      // Serial.write((adc_value[i] >> 8) & 0xFF); // Отправляем старший байт
+      // Serial.write(adc_value[i] & 0xFF);        // Отправляем младший байт
       // Serial.print((float)adc_value[i] / 1023.0 * 5.0); // Отправляем значение входа
-      // Serial.print(adc_value[i]);
+      Serial.print(adc_value[i]);
       Serial.print(';'); // Разделитель между значениями
     }
     Serial.print('\n'); // Новая строка после всех значений
