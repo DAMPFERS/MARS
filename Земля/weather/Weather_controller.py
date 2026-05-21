@@ -5,8 +5,177 @@ weather_cli.py - Интерактивное управление погодой 
 🔌 Как импортировать в другие скрипты
 from weather_cli import apply_weather, set_all_wind, set_all_sun, set_all_weather
 """
+
 import socket
 import sys
+import json
+import threading
+from typing import Dict, Optional, List, Tuple
+from datetime import datetime
+
+class StationData:
+    """Класс для хранения последних данных станции"""
+    def __init__(self, station_id: int, station_name: str):
+        self.station_id = station_id
+        self.station_name = station_name
+        self.timestamp: str = "None"
+        self.params: Dict = {"energy": {"consumption": 0.0, "generation": 0.0, "storage": 0.0},
+            "communication": {"speed": 0, "latency": 0, "snr": 0.0},
+            "materials": {"supply": 0, "consumption_rate": 0.0, "delivery_time": 0},
+            "rover": {"charge": 0, "distance": 0.0, "status": "None"}
+        }
+        self.lock = threading.Lock()  # Для потокобезопасного доступа
+        
+    
+    def update (self, data: Dict) -> None:
+        """Обновляет данные станции."""
+        with self.lock:
+            self.timestamp = data.get("timestamp", "None")
+            self.params = data.get("params", self.params)
+            
+    def getData(self) -> Dict:
+        """Возвращает текущие данные станции"""
+        with self.lock:
+            return {
+                "station_id": self.station_id,
+                "station_name": self.station_name,
+                "timestamp": self.timestamp,
+                "params": self.params
+            }
+    
+    
+    
+class TCPReceiver:
+    def __init__(self, host: str = "0.0.0.0", port: int = 5002, allowed_ips: Optional[List[str]] = None):
+        """
+        Инициализация сервера.
+        :param host: IP-адрес для прослушивания (по умолчанию все интерфейсы)
+        :param port: Порт для прослушивания
+        :param allowed_ips: Список разрешенных IP-адресов. Если None, разрешены все
+        """
+        self.host = host
+        self.port = port
+        self.allowed_ips = allowed_ips
+        self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.running = False
+        # self.stations: Dict[int, StationData] = {}  # Хранилище данных станций
+        # Инициализируем данные для 4 станций
+        self.stations: Tuple[StationData, ...] = (
+            StationData(1, "Station 1"),
+            StationData(2, "Station 2"),
+            StationData(3, "Station 3"),
+            StationData(4, "Station 4")
+        )
+        self.stations_lock = threading.Lock()  # Для потокобезопасного доступа к словарю станций
+        self.game_tick = 0  # Текущий такт игры
+        self.operation_mode = "unknown"  # Текущий режим работы 
+        
+        
+    def setGameTick(self, tick: int) -> None:
+        """Устанавливает текущий такт игры"""
+        self.game_tick = tick
+        
+    def setOperationMode(self, mode: str) -> None:
+        """Устанавливает текущий режим работы (например, 'normal', 'emergency', 'maintenance')"""
+        self.operation_mode = mode
+        
+    def start(self) -> None:
+        """Запускает сервер в отдельном потоке."""
+        self.server_socket.bind((self.host, self.port))
+        self.server_socket.listen(5)    # Очередь из 5 соединени
+        self.running = True
+        print(f"🔌 TCP-сервер запущен на {self.host}:{self.port} (ожидание JSON-пакетов)...")
+        
+        server_thread = threading.Thread(target=self._acceptConnection, daemon=True)
+        server_thread.start()
+        
+    def stop(self) -> None:
+        """Останавливает сервер."""
+        self.running = False
+        self.server_socket.close()
+        print("🛑 TCP-сервер остановлен.")
+        
+    def _acceptConnection(self) -> None:
+        """Принимает входящие соединения и обрабатывает их."""
+        while self.running:
+            try:
+                client_socket, addr = self.server_socket.accept()
+                client_ip = addr[0]
+                if self.allowed_ips and client_ip not in self.allowed_ips:
+                    print(f"Подключение от {addr} отклонено (IP не в списке разрешенных).")
+                    client_socket.close()
+                    continue
+                print(f"Новое соединение от {addr}")
+                
+                # Обрабатываем клиента в отдельном потоке
+                client_threar = threading.Thread(
+                    target=self._handleClient,
+                    args=(client_socket, addr),
+                    daemon=True
+                )
+                client_threar.start()
+            except OSError:
+                # Сервер закрыт
+                break
+            
+    def _handleClient(self, client_socket: socket.socket, addr: tuple) -> None:
+        """Обрабатывает клиентское соединение."""
+        
+        try:
+            # data = client_socket.recv(1024).decode("utf-8").strip
+            data = client_socket.recv(1024).decode("utf-8").strip()
+            if not data:
+                return
+            # --- Фиксируем время получения пакета ---
+            packet_timestamp = datetime.now().isoformat()  # Формат: "YYYY-MM-DDTHH:MM:SS.mmmmmm"
+            try:
+                # json_data = json.load(data)
+                json_data = json.loads(data)
+                
+                # Обновляем данные станции
+                station_id = json_data.get("station_id")
+                # station_name = json_data.get("station_name")
+                if 1 <= station_id <= 4:
+                    with self.stations_lock:
+                        self.stations[station_id - 1].update(json_data)    
+                else:
+                    print(f"Некорректный station_id: {station_id}")
+                
+                # Отправляем ответ
+                
+                
+                response = {"status": "success", 
+                            "message": "Пакет получен", 
+                            "from": addr,
+                            "last_timestamp": packet_timestamp,
+                            "game_tick": self.game_tick,  
+                            "operation_mode": self.operation_mode
+                }
+                client_socket.sendall(json.dumps(response, ensure_ascii=False).encode("utf-8"))
+            
+            except json.JSONDecodeError:
+                print(f"⚠️ Получены некорректные данные от {addr}: {data}")
+            
+        except Exception as e:
+            print(f"⚠️ Ошибка при обработке клиента {addr}: {e}")
+        finally:
+            client_socket.close()
+     
+            
+    def getStationData(self, station_id: int) -> Optional[Dict]:
+        """Возвращает последние данные станции по её ID"""
+        if 1 <= station_id <= 4:
+            with self.stations_lock:
+                station = self.stations[station_id - 1]
+                return station.getData()
+        return None
+        
+        
+        
+        
+        
+        
 
 # ───────────────────────────────────────────────────────────────
 # КОНФИГУРАЦИЯ (соответствует индексам 8-11 массива GATES)
@@ -89,6 +258,19 @@ def set_all_weather(sun_val: int, wind_val: int) -> bool:
 # ИНТЕРАКТИВНЫЙ CLI
 # ───────────────────────────────────────────────────────────────
 def main() -> None:
+    
+    import time 
+    i = 0
+    server = TCPReceiver()
+    server.start()
+    while i < 10:
+        station_1_data = server.getStationData(1)
+        print(f"Данные станции 1: {station_1_data}")
+        time.sleep(5)
+        i += 1
+    
+    
+    
     print("=" * 52)
     print("🌦️  УПРАВЛЕНИЕ ПОГОДОЙ  СТЕНДОВ")
     print("=" * 52)
