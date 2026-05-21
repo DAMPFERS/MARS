@@ -28,7 +28,7 @@ class SerialLoggerThread(QThread):
         self.stop_flag = False
         self._ser = None
 
-    def run(self) -> None:
+    def start(self) -> None:
         try:
             self.log_path.parent.mkdir(parents=True, exist_ok=True)
             

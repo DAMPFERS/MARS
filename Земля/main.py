@@ -128,13 +128,20 @@ def main() -> None:
     window.load_data(str(WEATHER_CSV), col_x=0, col_y1=1, col_y2=2)
     
     # 3. Запуск фонового потока чтения порта
-    logger = serial_logger.SerialLogger(port=COM_PORT, baudrate=9600, log_path=str(LOG_PATH))      
+    logger = serial_logger.SerialLoggerThread(port=COM_PORT, baudrate=9600, log_path=str(LOG_PATH))
+          
     logger.start()        
-    print(f"[Main] Поток чтения запущен (порт: {COM_PORT}, лог: {LOG_PATH})")      
+    print(f"[Main] Попытка запустить Поток чтения (порт: {COM_PORT}, лог: {LOG_PATH})")      
+
+
+    #TCP соединение
+    server = Weather_controller.TCPReceiver()
+    server.start()
+    server.setOperationMode("Start")
 
     # 4. Таймер обновления GUI (каждые 10 секунд)
     update_timer = QTimer()
-    update_timer.setInterval(10000)
+    update_timer.setInterval(5000)
     
     def onTimerTick():
         
@@ -146,26 +153,79 @@ def main() -> None:
             current_idx = 0
         else:
             max_idx = len(window.data) - 1 if window.data is not None else 0
-            current_idx = (current_idx + 1) % (max_idx + 1) if max_idx >= 0 else 0  # Циклический переход
-            
+            current_idx = (current_idx + 1) % (max_idx + 1) if max_idx >= 0 else 0  # Циклический переход   
         window.set_active_point(current_idx)
         window.update_plots()
+        server.setGameTick(current_idx)
         
+        
+        # --- Обновление UI из Буффера для TCP ---
+        # Получаем данные для каждой станции из TCPReceiver
+        for station_idx in range(4):    # 4 станции (МАРС-1, МАРС-2, МАРС-3, МАРС-4)
+            # station_id в TCPReceiver: 1, 2, 3, 4 (соответствуют индексам 0-3)
+            station_data = server.getStationData(station_id=station_idx + 1)
+            if station_data:
+                params = station_data.get("params", {})
+                
+                # ЭНЕРГЕТИКА
+                energy = params.get("energy", {})
+                consumption = energy.get("consumption", 0)
+                generation = energy.get("generation", 0)
+                storage = energy.get("storage", 0)
+                
+                window.set_station_param(station_idx, 0, str(consumption))  # Потребление (МВт)
+                window.set_station_param(station_idx, 1, str(generation))   # Генерация (МВт)
+                window.set_station_param(station_idx, 2, str(storage))      # Накопитель (МВт)
+                
+                # СВЯЗЬ
+                communication = params.get("communication", {})
+                speed = communication.get("speed", 0)
+                latency = communication.get("latency", 0)
+                snr = communication.get("snr", 0)
+                
+                window.set_station_param(station_idx, 3, str(speed))    # Скорость (Мбит/с)
+                window.set_station_param(station_idx, 4, str(latency))  # Задержка (мс)
+                window.set_station_param(station_idx, 5, str(snr))      # SNR (dB)
+                
+                
+                # МАТЕРИАЛЫ
+                materials = params.get("materials", {})
+                supply = materials.get("supply", 0)
+                consumption_rate = materials.get("consumption_rate", 0)
+                delivery_time = materials.get("delivery_time", 0)
+                
+                window.set_station_param(station_idx, 6, str(supply))           # Запас (кг)
+                window.set_station_param(station_idx, 7, str(consumption_rate)) # Расход (кг/ч)
+                window.set_station_param(station_idx, 8, str(delivery_time))    # Доставка (дней)
+                
+                # РОВЕР
+                rover = params.get("rover", {})
+                charge = rover.get("charge", 0)
+                distance = rover.get("distance", 0)
+                status = rover.get("status", "Неизвестно")
+                
+                window.set_station_param(station_idx, 9, str(charge))     # Заряд (%)
+                window.set_station_param(station_idx, 10, str(distance))  # Дистанция (км)
+                window.set_station_param(station_idx, 11, str(status))    # Статус
+                
+                
+                
         # --- Обновление UI из логов ---
-        log_data = parseLatestConsumption(LOG_PATH)
-        for idx in range(len(log_data)):
-            station_data = log_data[idx]
-            consumption = station_data.get("потребление", 0)
-            generation = station_data.get("генерация", 0)
-            message = station_data.get("сообщение", "")
+        # log_data = parseLatestConsumption(LOG_PATH)
+        # print(log_data)
+        # for idx in range(len(log_data)):
+        #     station_data = log_data[idx]
+        #     consumption = station_data.get("потребление", 0)
+        #     generation = station_data.get("генерация", 0)
+        #     message = station_data.get("сообщение", "")
             
-            window.set_station_param(idx, param_id=0, value=str(consumption))  # param_id=0 для потребления
-            window.set_station_param(idx, param_id=1, value=str(generation))   # param_id=1 для генерации
+        #     window.set_station_param(idx, param_id=0, value=str(consumption))  # param_id=0 для потребления
+        #     window.set_station_param(idx, param_id=1, value=str(generation))   # param_id=1 для генерации
             # window.set_station_param(idx, param_id=2, value=message)          # param_id=2 для сообщения
              
+          
                 
         # Безопасная отправка погоды (ТОЛЬКО если предыдущая закончилась)
-        
         if (window.data is not None) and (not _is_weather_busy):
             try:
                 # .iloc гарантирует скаляр, а не Series
@@ -187,28 +247,6 @@ def main() -> None:
                 print(f"[Timer] Ошибка при запуске задачи погоды: {e}")
         
         
-        # if window.data is None:
-        #     return  # Защита от отсутствия данных
-        # try:
-        #     # Надёжный доступ к DataFrame
-        #     wind_val = int(window.data.iloc[current_idx][1])
-        #     sun_val = int(window.data.iloc[current_idx][2])
-            
-        #     # Запуск в отдельном потоке. daemon=True гарантирует, что поток не помешает закрытию приложения.
-        #     threading.Thread(
-        #         target=Weather_controller.set_all_weather, 
-        #         args=(sun_val, wind_val), 
-        #         daemon=True
-        #     ).start()
-            
-            
-        # except ValueError as ve:
-        #     print(f"[Timer] Ошибка преобразования данных погоды: {ve}")
-        # except Exception as e:
-        #     print(f"[Timer] Ошибка отправки погоды: {e}")
-            
-        # Weather_controller.set_all_weather(int(window.data[current_idx][1]), int(window.data[current_idx][2]))
-        
         
     update_timer.timeout.connect(onTimerTick)
     update_timer.start()
@@ -216,6 +254,7 @@ def main() -> None:
     # 5. Корректная обработка закрытия окна
     def cleanup():
         print("Завершение приложения...")
+        server.stop()
         logger.stop()  # Остановка потока чтения порта
     
     app.aboutToQuit.connect(cleanup)

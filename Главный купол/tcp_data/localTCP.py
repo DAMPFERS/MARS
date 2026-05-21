@@ -315,7 +315,7 @@ class StationTCPClient:
 if __name__ == "__main__":
     import time
     # Создание клиента
-    client = StationTCPClient("192.168.1.100", 5000)
+    client = StationTCPClient("127.0.0.1", 5005)
 
     # Запуск фонового потока
     client.start()
@@ -339,7 +339,7 @@ if __name__ == "__main__":
     )
     time.sleep(5)  # Ждем немного, чтобы данные были отправлены и ответ получен
     # Получение текущего состояния
-    status = client.get_status()
+    status = client.getStatus()
     print(f"Текущий такт: {status['game_tick']}, Режим: {status['operation_mode']}")
 
     # Остановка клиента

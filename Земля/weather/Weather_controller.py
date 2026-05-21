@@ -46,7 +46,7 @@ class StationData:
     
     
 class TCPReceiver:
-    def __init__(self, host: str = "0.0.0.0", port: int = 5002, allowed_ips: Optional[List[str]] = None):
+    def __init__(self, host: str = "0.0.0.0", port: int = 5005, allowed_ips: Optional[List[str]] = None):
         """
         Инициализация сервера.
         :param host: IP-адрес для прослушивания (по умолчанию все интерфейсы)
@@ -263,7 +263,7 @@ def main() -> None:
     i = 0
     server = TCPReceiver()
     server.start()
-    while i < 10:
+    while i < 30:
         station_1_data = server.getStationData(1)
         print(f"Данные станции 1: {station_1_data}")
         time.sleep(5)
