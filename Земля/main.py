@@ -141,7 +141,7 @@ def main() -> None:
 
     # 4. Таймер обновления GUI (каждые 10 секунд)
     update_timer = QTimer()
-    update_timer.setInterval(5000)
+    update_timer.setInterval(10000)
     
     def onTimerTick():
         
