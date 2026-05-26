@@ -101,7 +101,7 @@ class StationTCPClient:
 
         # Атрибуты, обновляемые при получении ответа
         self.last_timestamp: Optional[str] = None
-        self.game_tick: Optional[int] = None
+        self.game_tick: Optional[int] = 0
         self.operation_mode: Optional[str] = None
         self._lock = threading.Lock()
 
