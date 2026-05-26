@@ -179,7 +179,65 @@ def main() -> None:
                     if delta <= 0:
                         break
             
+        # 3. Формирование телеметрии для GUI
+        telemetry = {}
+        # Энергетика (реальные данные)
+        current_consumption = forecast_data["full_consumption"][tact_game]
+        telemetry["total_gen"] = f"{energy_data['full_generation']:.2f} МВт"
+        for i, val in enumerate(energy_data["generation"]):
+            telemetry[f"Блок А_{i}"] = f"{val:.2f}"
+            telemetry[f"Блок Б_{i}"] = f"{val:.2f}"
+        telemetry["total_cons"] = f"{current_consumption:.2f} МВт"
+        cons_map = ["residential_module_consumption", "communication_module_consumption", "energy_module_consumption", "central_module_consumption"]
+        for i, mod in enumerate(cons_map):
+            val = forecast_data[mod][tact_game]
+            telemetry[f"cons_{i}"] = f"{val:.2f}"
+            # Пороговая окраска
+            col = "#FF4D4D" if val > 5.0 else "#FFB800" if val > 4.2 else "#00FF9D"
+            telemetry[f"cons_{i}_style"] = f"color: {col}; font-size: 12px; font-weight: bold;"
+        
+        # Батареи
+        max_lvl = energy_data["max_battery_level"]
+        telemetry["battery_levels"] = [energy_data[f"battery{i+1}_level"]/max_lvl for i in range(3)]
+        telemetry["total_acc"] = f"{sum(energy_data[f'battery{i+1}_level'] for i in range(3)):.1f} МВт·ч"
+        
+        # Случайные флуктуации (эмуляция датчиков)
+        telemetry["Давление"] = f"{6.2 + np.random.uniform(-0.1, 0.1):.2f}"
+        telemetry["Кислород"] = f"{21.0 + np.random.uniform(-0.5, 0.5):.1f}"
+        telemetry["Углекислый газ"] = f"{420 + np.random.randint(-15, 15)}"
+        telemetry["Герметичность"] = f"{99.8 + np.random.uniform(-0.2, 0.2):.1f}"
+        telemetry["Температура"] = f"{22.5 + np.random.uniform(-1, 1):.1f}"
+        
+        telemetry["Мощность лазера"] = f"{12.4 + np.random.uniform(-0.5, 0.5):.1f}"
+        telemetry["Длина волны"] = f"{1550 + np.random.randint(-5, 5)}"
+        connection_data['speed'] = connection_data['speed'] + np.random.randint(-20, 20)
+        telemetry["Скорость канала"] = f"{connection_data['speed']}"
+        telemetry["Буфер передачи"] = f"{68 + np.random.randint(-10, 10)}"
+        connection_data['SNR'] = connection_data['SNR'] + np.random.uniform(-1.5, 1.5)
+        telemetry["Сигнал/Шум"] = f"{connection_data['SNR']:.1f}"
+        telemetry["Ошибки пакетов"] = str(np.random.randint(0, 5))
+        h, m, s = tick_count // 3600, (tick_count % 3600) // 60, tick_count % 60
+        telemetry["Время сеанса"] = f"{h:02}:{m:02}:{s:02}"
+        telemetry["Статус линка"] = "ONLINE"
+        telemetry["Статус линка_style"] = f"color: #00FF9D; font-size: 12px; font-weight: bold;"
+        
+        # h2 = 85.5 + np.random.uniform(-2, 2)
+        h2 = rover_data["charge"] + np.random.uniform(-2, 2)
+        rover_data["charge"] = h2  # Обновляем заряд в данных ровера
+        telemetry["Уровень H₂"] = f"{h2:.1f}"
+        telemetry["Уровень H₂_style"] = f"color: {'#FF4D4D' if h2 < 20 else '#00FF9D'}; font-size: 12px; font-weight: bold;"
+        telemetry["Давление в системе"] = f"{35.0 + np.random.uniform(-0.5, 0.5):.1f}"
+        telemetry["Температура ячейки"] = f"{82 + np.random.uniform(-3, 3):.0f}"
+        telemetry["Выходная мощность"] = f"{12.4 + np.random.uniform(-0.8, 0.8):.1f}"
+        rover_data["distance"] += np.random.uniform(0.5, 1.5)  # Увеличиваем дистанцию
+        telemetry["Запас хода"] = f"{rover_data["distance"]:.1f}"
+        telemetry["Статус привода"] = rover_data["status"]
+        telemetry["Статус привода_style"] = f"color: #00FF9D; font-size: 12px; font-weight: bold;"
 
+        # 4. Отправка в GUI
+        window.update_from_main(telemetry)
+        
+        
         
         
         if tick_count % 5 == 1:  # отправка данных на сервер каждые 5 секунд      
@@ -202,7 +260,6 @@ def main() -> None:
             pass
         
         if tick_count % 10 == 1: # отправка данных в купол связи каждые 10 секунд
-            
             gen = energy_data["full_generation"] * 255 / (1024 * 4)  # Масштабируем генерацию до диапазона 0-255
             gen = gen.to_bytes(1, byteorder='big', signed=False)
             
