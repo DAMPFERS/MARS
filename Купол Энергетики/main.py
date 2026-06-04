@@ -1,77 +1,7 @@
-# import json
-# from datetime import datetime
-
-# def createStationJson(
-#     station_id: int,
-#     station_name: str,
-#     # Энергетика
-#     consumption: float,
-#     generation: float,
-#     storage: float,
-#     # Связь
-#     speed: int,
-#     latency: int,
-#     snr: float,
-#     # Материалы
-#     supply: int,
-#     consumption_rate: float,
-#     delivery_time: int,
-#     # Ровер
-#     charge: int,
-#     distance: float,
-#     status: str
-# ) -> str:
-#     """
-#     Формирует JSON-строку с данными станции для отправки на сервер.
-
-#     Args:
-#         station_id: Идентификатор станции (0-3).
-#         station_name: Название станции.
-#         consumption: Потребление энергии (МВт).
-#         generation: Генерация энергии (МВт).
-#         storage: Уровень накопителя (МВт).
-#         speed: Скорость связи (Мбит/с).
-#         latency: Задержка связи (мс).
-#         snr: Отношение сигнал/шум (dB).
-#         supply: Запас материалов (кг).
-#         consumption_rate: Расход материалов (кг/ч).
-#         delivery_time: Время доставки (дней).
-#         charge: Заряд ровера (%).
-#         distance: Дистанция ровера (км).
-#         status: Статус ровера (строка).
-
-#     Returns:
-#         JSON-строка.
-#     """
-#     data = {
-#         "station_id": station_id,
-#         "station_name": station_name,
-#         "timestamp": datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ"),
-#         "params": {
-#             "energy": {
-#                 "consumption": consumption,
-#                 "generation": generation,
-#                 "storage": storage
-#             },
-#             "communication": {
-#                 "speed": speed,
-#                 "latency": latency,
-#                 "snr": snr
-#             },
-#             "materials": {
-#                 "supply": supply,
-#                 "consumption_rate": consumption_rate,
-#                 "delivery_time": delivery_time
-#             },
-#             "rover": {
-#                 "charge": charge,
-#                 "distance": distance,
-#                 "status": status
-#             }
-#         }
-#     }
-#     return json.dumps(data, ensure_ascii=False, indent=2)
-
+import time
+import os
+import subprocess
+import pandas as pd
 
 import json
 import socket
@@ -79,6 +9,9 @@ import threading
 import queue
 from datetime import datetime
 from typing import Optional, Dict, Any
+
+
+
 
 
 class StationTCPClient:
@@ -100,11 +33,6 @@ class StationTCPClient:
         self.socket: Optional[socket.socket] = None
         self._is_connected = False
 
-        # Атрибуты, обновляемые при получении ответа
-        self.last_timestamp: Optional[str] = None
-        self.game_tick: Optional[int] = 0
-        self.operation_mode: Optional[str] = None
-        self._lock = threading.Lock()
 
         # Управление потоком
         self._stop_event = threading.Event()
@@ -120,7 +48,7 @@ class StationTCPClient:
             self._is_connected = True
             return True
         except Exception as e:
-            print(f"Ошибка подключения: {e}")
+            print(f"Ошибка подключения к станции: {e}")
             self._is_connected = False
             self.socket = None
             return False
@@ -212,7 +140,7 @@ class StationTCPClient:
         self._task_queue.put(task)
 
     def _process_task(self, task: Dict[str, Any]) -> bool:
-        """Обрабатывает одну задачу: отправляет данные и принимает ответ."""
+        """Обрабатывает одну задачу: отправляет данные и принимает ответ"""
         if not self._is_connected:
             if not self.connect():
                 return False
@@ -313,35 +241,95 @@ class StationTCPClient:
             }
 
 
+
+
+
+def openExcelFile(directory: str)-> int:
+    for i in range(1, 5):
+        filename = f"Сonsumption plan Data_frame_{i}.xlsx"
+        filepath = os.path.join(directory, filename)
+        if os.path.exists(filepath):
+            print(f"Сформирован файл: {filename}")
+            # Открываем файл с помощью стандартного приложения
+            if os.name == 'nt':  # Windows
+                os.startfile(filepath)
+            elif os.name == 'posix':  # Linux/Mac
+                subprocess.run(['xdg-open', filepath])
+            return i
+    print("Не удалось сформировать Файл Сonsumption plan")
+    return None
+
+
+
+def readExcelByColumn(file_path, column_group, subcolumn_name):
+    """
+    Считывает данные из файла Excel по имени подстолбца в группе столбцов.
+
+    Args:
+        file_path (str): Путь к файлу Excel
+        column_group (str): Имя группы столбцов (верхний уровень заголовка)
+        subcolumn_name (str): Имя подстолбца (нижний уровень заголовка)
+
+    Returns:
+        list: Список значений из указанного подстолбца
+        None: Если подстолбец не найден или файл не существует
+    """
+    try:
+        # Чтение файла Excel с многоуровневыми заголовками
+        df = pd.read_excel(file_path, header=[0, 1])
+
+        # Проверка наличия группы и подстолбца
+        if (column_group, subcolumn_name) in df.columns:
+            return df[(column_group, subcolumn_name)].tolist()
+        else:
+            print(f"Подстолбец '{subcolumn_name}' в группе '{column_group}' не найден в файле.")
+            return None
+    except FileNotFoundError:
+        print(f"Файл '{file_path}' не найден.")
+        return None
+    except Exception as e:
+        print(f"Произошла ошибка: {e}")
+        return None
+
+
+
+
+
 if __name__ == "__main__":
-    import time
-    # Создание клиента
-    client = StationTCPClient("127.0.0.1", 5005)
-
-    # Запуск фонового потока
-    client.start()
-
-    # Отправка данных (не блокирует GUI)
-    client.send_station_data(
-        station_id=1,
-        station_name="Station Alpha",
-        consumption=10.5,
-        generation=15.0,
-        storage=50.0,
-        speed=100,
-        latency=50,
-        snr=25.5,
-        supply=1000,
-        consumption_rate=10.0,
-        delivery_time=2,
-        charge=80,
-        distance=150.5,
-        status="active"
-    )
-    time.sleep(5)  # Ждем немного, чтобы данные были отправлены и ответ получен
-    # Получение текущего состояния
-    status = client.getStatus()
-    print(f"Текущий такт: {status['game_tick']}, Режим: {status['operation_mode']}")
-
-    # Остановка клиента
-    client.stop()
+    
+    res = readExcelByColumn("Сonsumption plan Data_frame_1.xlsx", "Погода", "Ветер")
+    print(res)
+    print(len(res))
+    exit()
+    
+    
+    
+    print("Вас приветствует центр планирования полетов миссии M.A.Р.C.")
+    
+    station_name = None
+    while station_name not in [1, 2, 3, 4]:
+        station_name = int(input("Введите номер станции: "))
+        time.sleep(1)
+        if station_name not in [1, 2, 3, 4]:
+            print("Неверный номер станции. Пожалуйста, введите число от 1 до 4.")     
+        
+    print("Получение данных с базы данных управления полетами и формирование файла... (подождите)")
+    time.sleep(3)  # Симуляция времени обработки данных
+    
+    
+    directory = "D:/PROGRAMS/MARS/Купол Энергетики"  # Заменить на нужный путь
+    
+    index_file = openExcelFile(directory)
+    if index_file is None:
+        time.sleep(10)
+    else:
+        print("Вы внесли все необходимые изменения? (не забудьте сохранить изменения в файле)")
+        
+        response = input("Готовы к загрузке плана (да/нет): ")
+        if response.lower() == "да":
+            print("Загрузка плана...")
+            time.sleep(2)  # Симуляция времени загрузки
+            print("План успешно загружен!")
+        else:
+            print("План не был загружен. Пожалуйста, внесите необходимые изменения и повторите попытку")
+    
