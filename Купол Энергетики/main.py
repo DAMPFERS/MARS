@@ -10,6 +10,7 @@ import queue
 from datetime import datetime
 from typing import Optional, Dict, Any
 
+import csv
 
 
 
@@ -294,13 +295,77 @@ def readExcelByColumn(file_path, column_group, subcolumn_name):
 
 
 
+def addColumnToCSV(file_path, column_name, data):
+    # Чтение существующих данных
+    with open(file_path, mode='r', newline='', encoding='utf-8') as file:
+        reader = csv.reader(file)
+        rows = list(reader)
+
+    # Проверка: длина данных должна совпадать с количеством строк БЕЗ заголовка
+    if len(rows) > 0:
+        data_rows_count = len(rows) - 1  # исключаем заголовок
+        if len(data) != data_rows_count:
+            raise ValueError(
+                f"Длина списка данных ({len(data)}) должна совпадать "
+                f"с количеством строк в файле без заголовка ({data_rows_count})."
+            )
+
+    # Добавление нового столбца
+    if len(rows) == 0:
+        # Если файл пустой, создаем заголовок
+        rows.append([column_name])
+        for value in data:
+            rows.append([value])
+    else:
+        # Добавляем название столбца в заголовок
+        rows[0].append(column_name)
+        # Добавляем данные в каждую строку (начиная с первой после заголовка)
+        for i, value in enumerate(data):
+            rows[i+1].append(value)
+
+    # Запись обновленных данных обратно в файл
+    with open(file_path, mode='w', newline='', encoding='utf-8') as file:
+        writer = csv.writer(file, delimiter=',')
+        writer.writerows(rows)
+
+
+
 
 if __name__ == "__main__":
     
-    res = readExcelByColumn("Сonsumption plan Data_frame_1.xlsx", "Погода", "Ветер")
-    print(res)
-    print(len(res))
-    exit()
+    # sun = readExcelByColumn("Сonsumption plan Data_frame_1.xlsx", "Погода", "Солнце")
+    # weat = readExcelByColumn("Сonsumption plan Data_frame_1.xlsx", "Погода", "Ветер")
+    
+    # glav = readExcelByColumn("Сonsumption plan Data_frame_1.xlsx", "Потребление", "Главный модуль")
+    # svaz = readExcelByColumn("Сonsumption plan Data_frame_1.xlsx", "Потребление", "Модуль связи")
+    # live = readExcelByColumn("Сonsumption plan Data_frame_1.xlsx", "Потребление", "Жилой модуль")
+    # energ = readExcelByColumn("Сonsumption plan Data_frame_1.xlsx", "Потребление", "Модуль энергетики")
+    
+    # state = readExcelByColumn("Сonsumption plan Data_frame_1.xlsx", "Параметры", "Состояние панелей")
+    
+    # print(type(sun))
+    # print(len(weat))
+    
+    # print(len(glav))
+    # print(len(svaz))
+    # print(len(live))
+    # print(len(energ))
+    
+    # print(len(state))
+    
+    # addColumnToCSV("forecast.csv", "Солнце", sun)
+    # addColumnToCSV("forecast.csv", "Ветер", weat) 
+    
+    # addColumnToCSV("forecast.csv", "Главный модуль", glav) 
+    # addColumnToCSV("forecast.csv", "Модуль связи", svaz) 
+    # addColumnToCSV("forecast.csv", "Жилой модуль", live) 
+    # addColumnToCSV("forecast.csv", "Модуль энергетики", energ) 
+    
+    # addColumnToCSV("forecast.csv", "Состояние панелей", state)    
+    
+    # print("Конец")
+    # # print(len(res))
+    # exit()
     
     
     
@@ -325,11 +390,131 @@ if __name__ == "__main__":
     else:
         print("Вы внесли все необходимые изменения? (не забудьте сохранить изменения в файле)")
         
-        response = input("Готовы к загрузке плана (да/нет): ")
-        if response.lower() == "да":
-            print("Загрузка плана...")
-            time.sleep(2)  # Симуляция времени загрузки
-            print("План успешно загружен!")
-        else:
-            print("План не был загружен. Пожалуйста, внесите необходимые изменения и повторите попытку")
+        while True:
+            response = input("Готовы к загрузке плана (да/нет): ")
+            if response.lower() == "да":
+                print("Проверка корректности данных...")
+                flag_err = False
+                
+                path_name = directory + "/" + f"Сonsumption plan Data_frame_{index_file}.xlsx"
+                sun = readExcelByColumn(path_name, "Погода", "Солнце")
+                
+                # print(type(sun))
+                # print(type(sun[0]))
+                l = len(sun)
+                # print(l)
+                # print(type(l))
+                # print(sun)
+                
+                # sun = list(sun)
+                
+                
+                if l != 100:
+                    # print(f"l = {l}, type(l) = {type(l)}, l != 100 = {l != 100}")
+                    print("Ошибка в данных: Прогноз солнца, исправьте ошибку")
+                    continue
+                i = 0
+                while (flag_err == False) and (i < 100):
+                
+                    if (type(sun[i]) is not int) or (sun[i] >= 100):
+                        flag_err = True
+                        print("Ошибка в данных: Прогноз солнца, исправьте ошибку")
+                        break
+                    i += 1
+                    
+                
+                
+                        
+                weat = readExcelByColumn(path_name, "Погода", "Ветер")
+                if len(weat) != 100:
+                    print("Ошибка в данных: Прогноз ветра, исправьте ошибку")
+                    continue
+                i = 0
+                while (flag_err == False) and (i < 100):
+                
+                    if (type(weat[i]) is not int) or (weat[i] >= 100):
+                        flag_err = True
+                        print("Ошибка в данных: Прогноз ветра, исправьте ошибку")
+                        break
+                    i += 1
+                
+                
+                
+                glav = readExcelByColumn(path_name, "Потребление", "Главный модуль")
+                if len(glav) != 100:
+                    print("Ошибка в данных: Главный модуль, исправьте ошибку")
+                    continue
+                i = 0
+                while (flag_err == False) and (i < 100):
+                
+                    if (type(glav[i]) is not int) or (glav[i] >= 100):
+                        flag_err = True
+                        print("Ошибка в данных: Главный модуль, исправьте ошибку")
+                        break
+                    i += 1
+                
+                
+                svaz = readExcelByColumn(path_name, "Потребление", "Модуль связи")
+                if len(svaz) != 100:
+                    print("Ошибка в данных: Модуль связи, исправьте ошибку")
+                    continue
+                i = 0
+                while (flag_err == False) and (i < 100):
+                
+                    if (type(svaz[i]) is not int) or (svaz[i] >= 100):
+                        flag_err = True
+                        print("Ошибка в данных: Модуль связи, исправьте ошибку")
+                        break
+                    i += 1
+                
+                
+                live = readExcelByColumn(path_name, "Потребление", "Жилой модуль")
+                if len(live) != 100:
+                    print("Ошибка в данных: Жилой модуль, исправьте ошибку")
+                    continue
+                i = 0
+                while (flag_err == False) and (i < 100):
+                    if (type(live[i]) is not int) or (live[i] >= 100):
+                        flag_err = True
+                        print("Ошибка в данных: Жилой модуль, исправьте ошибку")
+                        break
+                    i += 1
+                
+                
+                energ = readExcelByColumn(path_name, "Потребление", "Модуль энергетики")
+                if len(energ) != 100:
+                    print("Ошибка в данных: Модуль энергетики, исправьте ошибку")
+                    continue
+                i = 0
+                while (flag_err == False) and (i < 100):
+                    if (type(energ[i]) is not int) or (energ[i] >= 100):
+                        flag_err = True
+                        print("Ошибка в данных: Модуль энергетики, исправьте ошибку")
+                        break
+                    i += 1
+                
+                
+                state = readExcelByColumn(path_name, "Параметры", "Состояние панелей")
+                if len(state) != 100:
+                    print("Ошибка в данных: Модуль энергетики, исправьте ошибку")
+                    continue
+                i = 0
+                while (flag_err == False) and (i < 100):
+                    if (type(state[i]) is not int) or (state[i] > 1) or (state[i] < 0):
+                        flag_err = True
+                        print("Ошибка в данных: Модуль энергетики, исправьте ошибку")
+                        break
+                    i += 1
+                
+                
+                if flag_err:    continue
+                
+                print("Загрузка плана...")
+                time.sleep(2)  # Симуляция времени загрузки
+                print("План успешно загружен!")
+                
+                exit()
+            else:
+                print("План не был загружен. Пожалуйста, внесите необходимые изменения и повторите попытку")
+                time.sleep(5)
     
