@@ -135,11 +135,11 @@ class StationTCPClient:
                 "status": "Кейс по энергетике",
                 "station_id": station_id,
                 "index_file": index_file,
-                "main_dom": glav[start_idx:end_idx],
-                "connection_dom": svaz[start_idx:end_idx],
-                "live_dom": live[start_idx:end_idx],
-                "energi_dom": energ[start_idx:end_idx],
-                "state_panels": state[start_idx:end_idx]
+                "Главный модуль": glav[start_idx:end_idx],
+                "Модуль связи": svaz[start_idx:end_idx],
+                "Жилой модуль": live[start_idx:end_idx],
+                "Модуль энергетики": energ[start_idx:end_idx],
+                "Состояние панелей": state[start_idx:end_idx]
             }
 
             json_data = json.dumps(data, ensure_ascii=False, indent=2)

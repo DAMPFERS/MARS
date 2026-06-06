@@ -28,7 +28,7 @@ from tcp_data import localTCP
 STATION_ADDRESS = "0x15"
 STATION_ID = 1
 
-IP_SSERVER = "127.0.0.1"
+IP_SERVER = "127.0.0.1"
 PORT_SERVER = 5005
 
 FONTH_PATH = "GUI/assets/fonts/DPix_8pt.ttf"
@@ -128,8 +128,8 @@ def main() -> None:
     # print("[Main] Инициализация LED ленты завершена")
     
     # 5. Запуск TCP соединения
-    client = localTCP.StationTCPClient(IP_SSERVER, PORT_SERVER)
-    print(f"[Main] Попытка запустить поток TCP соединения: {IP_SSERVER}:{PORT_SERVER}")
+    client = localTCP.StationTCPClient(IP_SERVER, PORT_SERVER)
+    print(f"[Main] Попытка запустить поток TCP соединения: {IP_SERVER}:{PORT_SERVER}")
     
     # 6. Таймер обновления GUI 
     update_timer = QTimer()
@@ -152,9 +152,74 @@ def main() -> None:
         if tick_count is None:  tick_count = 0
         else:                   tick_count += 1
         
+        
         # Получаем текущий такт игры из статуса сервера
         status = client.getStatus()
         tact_game = status['game_tick'] 
+        
+        
+        # ПРОВЕРКА И ПРИМЕНЕНИЕ ОБНОВЛЕНИЙ ОТ АДМИНА (кейс по энергетике)
+        admin_updates = client.get_pending_admin_updates()
+        if admin_updates is not None:
+            print("[Main] ⚠️ Получены обновления данных от администратора!")
+        
+        for frame in admin_updates.get("frames", []):
+            frame_data = frame.get("data", {})
+            index_file = frame_data.get("index_file", 1)
+            
+            # Логика среза совпадает с логикой в скрипте админа
+            start_idx = (index_file - 1) * 25
+            end_idx = start_idx + 25
+            
+            columns_to_update = [
+                "Главный модуль", "Модуль связи", "Жилой модуль", 
+                "Модуль энергетики", "Состояние панелей"
+            ]
+            
+            # 1. Обновляем оперативные данные (forecast_data)
+            for col_name in columns_to_update:
+                if col_name in frame_data:
+                    new_values = frame_data[col_name]
+                    current_list = list(forecast_data[col_name]) # Гарантируем тип list
+                    
+                    if len(new_values) == (end_idx - start_idx) and len(current_list) >= end_idx:
+                        # Обновляем конкретный срез (25 значений)
+                        current_list[start_idx:end_idx] = new_values
+                    else:
+                        # Fallback: если пришли все 100 значений, заменяем полностью
+                        current_list = list(new_values)
+                    
+                    forecast_data[col_name] = current_list
+
+            # 2. Пересчитываем "Полное потребление", так как компоненты изменились
+            res = []
+            length = len(forecast_data["Главный модуль"])
+            for i in range(length):
+                total = (forecast_data["Главный модуль"][i] + 
+                         forecast_data["Модуль связи"][i] + 
+                         forecast_data["Жилой модуль"][i] + 
+                         forecast_data["Модуль энергетики"][i])
+                res.append(total)
+            forecast_data["Полное потребление"] = res
+            print("[Main] Данные forecast_data и 'Полное потребление' пересчитаны")
+
+            # 3. Сохраняем изменения обратно в CSV файл
+            try:
+                df = pd.read_csv(WEATHER_CSV)
+                for col_name in columns_to_update:
+                    if col_name in frame_data:
+                        new_vals = frame_data[col_name]
+                        if len(new_vals) == (end_idx - start_idx) and len(df) >= end_idx:
+                            # Обновляем срез в DataFrame (loc включает правую границу, поэтому end_idx-1)
+                            df.loc[start_idx:end_idx-1, col_name] = new_vals
+                        else:
+                            df[col_name] = list(new_vals)
+                
+                df.to_csv(WEATHER_CSV, index=False)
+                print(f"[Main] ✅ Файл {WEATHER_CSV.name} успешно обновлен на диске.")
+            except Exception as e:
+                print(f"[Main] ❌ Ошибка при обновлении CSV файла: {e}")
+        
         
         # Обновление значений генерации с COM-порта (купол энергетики)
         # energy_data["generation"] = serial_manager.getLastDataSolarPanels() 
@@ -182,6 +247,7 @@ def main() -> None:
                     delta -= (old_level - energy_data[f"battery{i+1}_level"])  # Уменьшаем delta на то, что отняли из батареи
                     if delta <= 0:
                         break
+        
             
         # 3. Формирование телеметрии для GUI
         telemetry = {}

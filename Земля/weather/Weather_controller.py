@@ -46,6 +46,7 @@ class StationData:
     
     
 class TCPReceiver:
+    
     def __init__(self, host: str = "0.0.0.0", port: int = 5005, allowed_ips: Optional[List[str]] = None):
         """
         Инициализация сервера.
@@ -68,6 +69,10 @@ class TCPReceiver:
             StationData(4, "Station 4")
         )
         self.stations_lock = threading.Lock()  # Для потокобезопасного доступа к словарю станций
+        self.pending_admin_commands: Dict[int, List[Dict]] = {1: [], 2: [], 3: [], 4: []}
+        self.admin_lock = threading.Lock()  # Для потокобезопасного доступа к командам админа
+        
+        
         self.game_tick = 0  # Текущий такт игры
         self.operation_mode = "unknown"  # Текущий режим работы 
         
@@ -85,7 +90,7 @@ class TCPReceiver:
         self.server_socket.bind((self.host, self.port))
         self.server_socket.listen(5)    # Очередь из 5 соединени
         self.running = True
-        print(f"🔌 TCP-сервер запущен на {self.host}:{self.port} (ожидание JSON-пакетов)...")
+        print(f" TCP-сервер запущен на {self.host}:{self.port} (ожидание JSON-пакетов)...")
         
         server_thread = threading.Thread(target=self._acceptConnection, daemon=True)
         server_thread.start()
@@ -120,11 +125,11 @@ class TCPReceiver:
                 break
             
     def _handleClient(self, client_socket: socket.socket, addr: tuple) -> None:
-        """Обрабатывает клиентское соединение."""
         
+        """Обрабатывает клиентское соединение"""
         try:
-            # data = client_socket.recv(1024).decode("utf-8").strip
-            data = client_socket.recv(1024).decode("utf-8").strip()
+            
+            data = client_socket.recv(4096).decode("utf-8").strip()
             if not data:
                 return
             # --- Фиксируем время получения пакета ---
@@ -132,26 +137,63 @@ class TCPReceiver:
             try:
                 # json_data = json.load(data)
                 json_data = json.loads(data)
-                
                 # Обновляем данные станции
                 station_id = json_data.get("station_id")
                 # station_name = json_data.get("station_name")
-                if 1 <= station_id <= 4:
-                    with self.stations_lock:
-                        self.stations[station_id - 1].update(json_data)    
-                else:
+                if not(1 <= station_id <= 4):
                     print(f"Некорректный station_id: {station_id}")
+                    return
+                    # with self.stations_lock:
+                        # self.stations[station_id - 1].update(json_data)    
+                # Разделяем типы сообщений по полю "status"
+                is_admin_msg = json_data.get("status") == "Кейс по энергетике"
+                if is_admin_msg:
+                    # ─────────────────────────────────────────────────────
+                    # ЛОГИКА АДМИНА: кладем команду в очередь станции
+                    # ─────────────────────────────────────────────────────
+                    with self.admin_lock:
+                        self.pending_admin_commands[station_id].append(json_data)
+
+                    # Отправляем админу немедленное подтверждение
+                    response = {
+                        "status": "success",
+                        "message": "Команда администратора принята в очередь"
+                    }   
+                else:
+                    # ─────────────────────────────────────────────────────
+                    # ЛОГИКА СТАНЦИИ: обновляем данные станции (+ проверяем очередь админа)
+                    # ─────────────────────────────────────────────────────
+                    with self.stations_lock:
+                        self.stations[station_id - 1].update(json_data)
+                    
+                    # Отправляем ответ
                 
-                # Отправляем ответ
+                
+                    response = {"status": "success", 
+                                "message": "Пакет получен", 
+                                "from": addr,
+                                "last_timestamp": packet_timestamp,
+                                "game_tick": self.game_tick,  
+                                "operation_mode": self.operation_mode
+                    }
+                    
+                    # Вкладываем накопленные команды админа в ответ станции
+                    with self.admin_lock:
+                        pending = self.pending_admin_commands[station_id]
+                        if pending:
+                            response["admin_updates"] = {
+                                "count": len(pending),  # кол-во фреймов по ТЗ
+                                "frames": [
+                                    {"id": cmd.get("index_file"), "data": cmd} 
+                                    for cmd in pending
+                                ]
+                            }
+                            # Очищаем очередь после отправки
+                            self.pending_admin_commands[station_id] = []
                 
                 
-                response = {"status": "success", 
-                            "message": "Пакет получен", 
-                            "from": addr,
-                            "last_timestamp": packet_timestamp,
-                            "game_tick": self.game_tick,  
-                            "operation_mode": self.operation_mode
-                }
+                
+                
                 client_socket.sendall(json.dumps(response, ensure_ascii=False).encode("utf-8"))
             
             except json.JSONDecodeError:
@@ -270,6 +312,7 @@ def main() -> None:
         i += 1
     
     
+    exit(0)
     
     print("=" * 52)
     print("🌦️  УПРАВЛЕНИЕ ПОГОДОЙ  СТЕНДОВ")

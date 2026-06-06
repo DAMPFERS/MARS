@@ -110,9 +110,15 @@ class StationTCPClient:
         self._stop_event = threading.Event()
         self._thread: Optional[threading.Thread] = None
         self._task_queue = queue.Queue()
+        
+        # Для хранения и синхронизации обновлений от админа
+        self._update_lock = threading.Lock()
+        self.needs_update = False
+        self.pending_admin_data: Optional[Dict] = None
+        
 
     def connect(self) -> bool:
-        """Устанавливает соединение с сервером."""
+        """Устанавливает соединение с сервером"""
         try:
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.socket.settimeout(5.0)  # Таймаут для операций с сокетом
@@ -242,6 +248,12 @@ class StationTCPClient:
                 self.game_tick = response_data.get("game_tick")
                 self.operation_mode = response_data.get("operation_mode")
 
+            # Пришли ли команды от админа?
+            if "admin_updates" in response_data:
+                with self._update_lock:
+                    self.pending_admin_data = response_data["admin_updates"]
+                    self.needs_update = True
+            
             return True
 
         except Exception as e:
@@ -311,6 +323,20 @@ class StationTCPClient:
                 "game_tick": self.game_tick,
                 "operation_mode": self.operation_mode
             }
+            
+            
+    def getPendingAdminUpdates(self) -> Optional[Dict]:
+        """
+        Проверяет флаг обновления. Если есть новые данные от админа, 
+        возвращает их и сбрасывает флаг. Потокобезопасно.
+        """
+        with self._update_lock:
+            if self.needs_update:
+                data = self.pending_admin_data
+                self.needs_update = False
+                self.pending_admin_data = None
+                return data
+            return None
 
 
 if __name__ == "__main__":
