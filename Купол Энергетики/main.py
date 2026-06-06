@@ -101,6 +101,82 @@ class StationTCPClient:
         }
         return json.dumps(data, ensure_ascii=False, indent=2)
 
+
+    def send_excel_data(
+        self,
+        station_id: int,
+        index_file: int,
+        glav: list,
+        svaz: list,
+        live: list,
+        energ: list,
+        state: list
+    ) -> bool:
+        """
+        Отправляет данные из Excel на сервер.
+        Args:
+            station_id: Номер станции.
+            index_file: Индекс файла (1, 2, 3, 4).
+            glav, svaz, live, energ, state: Списки данных.
+        Returns:
+            bool: Успешность отправки.
+        """
+        if not self._is_connected:
+            if not self.connect():
+                return False
+
+        try:
+            # Определяем срез данных в зависимости от индекса файла
+            start_idx = (index_file - 1) * 25
+            end_idx = start_idx + 25
+
+            # Формируем JSON с данными
+            data = {
+                "status": "Кейс по энергетике",
+                "station_id": station_id,
+                "index_file": index_file,
+                "main_dom": glav[start_idx:end_idx],
+                "connection_dom": svaz[start_idx:end_idx],
+                "live_dom": live[start_idx:end_idx],
+                "energi_dom": energ[start_idx:end_idx],
+                "state_panels": state[start_idx:end_idx]
+            }
+
+            json_data = json.dumps(data, ensure_ascii=False, indent=2)
+            self.socket.sendall(json_data.encode("utf-8"))
+
+            # Ожидаем подтверждение от сервера
+            response = b""
+            while True:
+                chunk = self.socket.recv(4096)
+                if not chunk:
+                    break
+                response += chunk
+                try:
+                    response_data = json.loads(response.decode("utf-8"))
+                    if response_data.get("status") == "success":
+                        print("Сервер подтвердил получение данных.")
+                        return True
+                    else:
+                        print("Сервер вернул ошибку:", response_data.get("error", "Неизвестная ошибка"))
+                        return False
+                except json.JSONDecodeError:
+                    continue
+
+            print("Не удалось получить подтверждение от сервера.")
+            return False
+
+        except Exception as e:
+            print(f"Ошибка при отправке данных: {e}")
+            self._is_connected = False
+            if self.socket:
+                try:
+                    self.socket.close()
+                except:
+                    pass
+                self.socket = None
+            return False
+
     def send_station_data(
         self,
         station_id: int,
@@ -510,9 +586,30 @@ if __name__ == "__main__":
                 if flag_err:    continue
                 
                 print("Загрузка плана...")
-                time.sleep(2)  # Симуляция времени загрузки
-                print("План успешно загружен!")
+                time.sleep(1)  # Симуляция времени загрузки
                 
+                client = StationTCPClient("127.0.0.1", port=5005)
+                if client.connect():
+                    success = client.send_excel_data(
+                        station_id=station_name,
+                        index_file=index_file,
+                        glav=glav,
+                        svaz=svaz,
+                        live=live,
+                        energ=energ,
+                        state=state
+                    )
+                    if success:
+                        print("План успешно загружен!")
+                        client.stop()
+                        exit()
+                    else:
+                        print("Ошибка при отправке данных на сервер.")
+                        client.stop()
+                else:
+                    print("Не удалось подключиться к серверу.")
+
+                time.sleep(3)
                 exit()
             else:
                 print("План не был загружен. Пожалуйста, внесите необходимые изменения и повторите попытку")

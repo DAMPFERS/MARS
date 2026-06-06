@@ -15,15 +15,15 @@ import traceback
 # from LED import ledControl
 from GUI import GUI_Station_MARS
 from SerialControll import serialDom
-from NextionWork import Nextion
+# from NextionWork import Nextion
 from tcp_data import localTCP
 
 
 
 
-COM_PORT_DOM_ENERGY = "COM11"
-COM_PORT_DOM_CONNECTION = "COM12"
-COM_PORT_DOM_NEXTION = "COM13"
+# COM_PORT_DOM_ENERGY = "COM11"
+# COM_PORT_DOM_CONNECTION = "COM12"
+# COM_PORT_DOM_NEXTION = "COM13"
 
 STATION_ADDRESS = "0x15"
 STATION_ID = 1
@@ -43,13 +43,14 @@ def main() -> None:
 
     
     forecast_data = {
-        "sun": (),
-        "wind": (),
-        "central_module_consumption": (),
-        "energy_module_consumption": (),
-        "residential_module_consumption": (),
-        "communication_module_consumption": (),
-        "full_consumption": ()  
+        "Солнце": (),
+        "Ветер": (),
+        "Главный модуль": (),
+        "Модуль связи": (),
+        "Жилой модуль": (),
+        "Модуль энергетики": (),
+        "Состояние панелей": (),
+        "Полное потребление": ()  
     }
     
     rover_data = {
@@ -105,21 +106,22 @@ def main() -> None:
     else:
         df = pd.read_csv(WEATHER_CSV)  # Загрузка данных из CSV в DataFrame
         
-        forecast_data["sun"] = tuple(df["sun"])
-        forecast_data["wind"] = tuple(df["wind"])
+        forecast_data["Солнце"] = tuple(df["Солнце"])
+        forecast_data["Ветер"] = tuple(df["Ветер"])
         
-        forecast_data["central_module_consumption"] = tuple(df["p_central"])
-        forecast_data["energy_module_consumption"] = tuple(df["p_energy"])
-        forecast_data["residential_module_consumption"] = tuple(df["p_live"])
-        forecast_data["communication_module_consumption"] = tuple(df["p_conn"])
+        forecast_data["Главный модуль"] = df["Главный модуль"]
+        forecast_data["Модуль связи"] = df["Модуль связи"]
+        forecast_data["Жилой модуль"] = df["Жилой модуль"]
+        forecast_data["Модуль энергетики"] = df["Модуль энергетики"]
+        forecast_data["Состояние панелей"] = df["Состояние панелей"]
         res = []
-        for i in range(len(forecast_data["central_module_consumption"])):
-            res.append(forecast_data["central_module_consumption"][i] + forecast_data["energy_module_consumption"][i] + forecast_data["residential_module_consumption"][i] + forecast_data["communication_module_consumption"][i])
-        forecast_data["full_consumption"] = tuple(res)
+        for i in range(len(forecast_data["Главный модуль"])):
+            res.append(forecast_data["Главный модуль"][i] + forecast_data["Модуль энергетики"][i] + forecast_data["Жилой модуль"][i] + forecast_data["Модуль связи"][i])
+        forecast_data["Полное потребление"] = res
 
     # 3. Запуск фонового потока чтения порта
-    serial_manager = serialDom.DeviceManager(COM_PORT_DOM_CONNECTION, COM_PORT_DOM_ENERGY)
-    print(f"[Main] Попытка запустить Поток чтения ком портов: {COM_PORT_DOM_CONNECTION}, {COM_PORT_DOM_ENERGY}")
+    # serial_manager = serialDom.DeviceManager(COM_PORT_DOM_CONNECTION, COM_PORT_DOM_ENERGY)
+    # print(f"[Main] Попытка запустить Поток чтения ком портов: {COM_PORT_DOM_CONNECTION}, {COM_PORT_DOM_ENERGY}")
     
     # 4. Запуск фонового потока управления LED
     # led_strip = ledControl.LEDStrip(num_leds=165, pin=18, led_type="RGB")
@@ -144,6 +146,8 @@ def main() -> None:
         nonlocal connection_data
         nonlocal material_data
         nonlocal rover_data
+        
+        nonlocal forecast_data
 
         if tick_count is None:  tick_count = 0
         else:                   tick_count += 1
@@ -153,14 +157,14 @@ def main() -> None:
         tact_game = status['game_tick'] 
         
         # Обновление значений генерации с COM-порта (купол энергетики)
-        energy_data["generation"] = serial_manager.getLastDataSolarPanels() 
+        # energy_data["generation"] = serial_manager.getLastDataSolarPanels() 
         if energy_data["generation"] is None:
             energy_data["generation"] = [0] * 6
         energy_data["full_generation"] = sum(energy_data["generation"])
         
         
         # Баланс энергии: если генерация превышает потребление, заряжаем батареи, иначе разряжаем
-        delta = energy_data["full_generation"] - forecast_data["full_consumption"][tact_game]
+        delta = energy_data["full_generation"] - forecast_data["Полное потребление"][tact_game]
         if delta >= 0: # достаточно энергии для покрытия потребления
             for i in range(3):
                 if energy_data[f"battery{i+1}_level"] < energy_data["max_battery_level"]:
@@ -182,13 +186,13 @@ def main() -> None:
         # 3. Формирование телеметрии для GUI
         telemetry = {}
         # Энергетика (реальные данные)
-        current_consumption = forecast_data["full_consumption"][tact_game]
+        current_consumption = forecast_data["Полное потребление"][tact_game]
         telemetry["total_gen"] = f"{energy_data['full_generation']:.2f} МВт"
         for i, val in enumerate(energy_data["generation"]):
             telemetry[f"Блок А_{i}"] = f"{val:.2f}"
             telemetry[f"Блок Б_{i}"] = f"{val:.2f}"
         telemetry["total_cons"] = f"{current_consumption:.2f} МВт"
-        cons_map = ["residential_module_consumption", "communication_module_consumption", "energy_module_consumption", "central_module_consumption"]
+        cons_map = ["Главный модуль", "Модуль связи", "Жилой модуль", "Модуль энергетики"]
         for i, mod in enumerate(cons_map):
             val = forecast_data[mod][tact_game]
             telemetry[f"cons_{i}"] = f"{val:.2f}"
@@ -244,7 +248,7 @@ def main() -> None:
             client.send_station_data(
                 station_id=STATION_ID,
                 station_name="Station Alpha",
-                consumption=forecast_data["full_consumption"][tact_game],
+                consumption=forecast_data["Полное потребление"][tact_game],
                 generation=energy_data["full_generation"],
                 storage=energy_data["battery1_level"] + energy_data["battery2_level"] + energy_data["battery3_level"],
                 speed=connection_data["speed"],
@@ -260,12 +264,12 @@ def main() -> None:
             pass
         
         if tick_count % 10 == 1: # отправка данных в купол связи каждые 10 секунд
-            gen = energy_data["full_generation"] * 255 / (1024 * 4)  # Масштабируем генерацию до диапазона 0-255
+            gen = int(energy_data["full_generation"] * 255 / (1024 * 4))  # Масштабируем генерацию до диапазона 0-255
             gen = gen.to_bytes(1, byteorder='big', signed=False)
             
-            consumption = forecast_data["full_consumption"][tact_game] * 255 / max(forecast_data["full_consumption"])  # Масштабируем потребление до диапазона 0-255
+            consumption = int(forecast_data["Полное потребление"][tact_game] * 255 / max(forecast_data["Полное потребление"]))  # Масштабируем потребление до диапазона 0-255
             consumption = consumption.to_bytes(1, byteorder='big', signed=False)
-            serial_manager.sendToDeviceCommunication(gen + consumption)  # Отправляем данные в купол связи
+            # serial_manager.sendToDeviceCommunication(gen + consumption)  # Отправляем данные в купол связи
             
             # serial_manager.sendToDeviceCommunication(b'\x01\x02\x03')  # Пример отправки данных в купол связи
             # serial_manager.sendToDeviceSolarPanels(45, 90)  # Пример отправ
@@ -288,7 +292,7 @@ def main() -> None:
             client.stop()
             print("[Main] TCP-клиент остановлен")
 
-            serial_manager.stop()
+            # serial_manager.stop()
             print("[Main] Менеджер COM-портов остановлен")
 
         except Exception as e:

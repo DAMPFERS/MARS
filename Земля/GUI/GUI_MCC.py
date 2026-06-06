@@ -368,15 +368,18 @@ class MarsForecastApp(QMainWindow):
             if station_widget and isinstance(station_widget, StationWidget):
                 station_widget.set_param_value(param_id, value)
 
-    def load_data(self, csv_path, col_x, col_y1, col_y2):
-        self.data = pd.read_csv(csv_path, header=None)
-        self.col_x, self.col_y1, self.col_y2 = col_x, col_y1, col_y2
+    def load_data(self, csv_path, col_y1_name, col_y2_name):
+        self.data = pd.read_csv(csv_path)
+        # self.col_x = self.data.columns.get_loc(col_x_name)  # Получаем индекс столбца по имени
+        self.col_y1 = self.data.columns.get_loc(col_y1_name)
+        self.col_y2 = self.data.columns.get_loc(col_y2_name)
         self.update_plots()
 
     def update_plots(self):
         if self.data is None:
             return
-        x = self.data.iloc[:, self.col_x].values
+        # x = self.data.iloc[:, self.col_x].values
+        x = np.arange(1, len(self.data) + 1)  # Если X не задан, используем индекс строк
         y1 = self.data.iloc[:, self.col_y1].values
         y2 = self.data.iloc[:, self.col_y2].values
         self.wind_plot.update_data(x, y1, self.active_point_index)

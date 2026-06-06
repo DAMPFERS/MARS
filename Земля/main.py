@@ -125,7 +125,7 @@ def main() -> None:
     if not WEATHER_CSV.exists():
         print(f"Ошибка: [Main] forecast.csv не найден {WEATHER_CSV}")
         return
-    window.load_data(str(WEATHER_CSV), col_x=0, col_y1=1, col_y2=2)
+    window.load_data(str(WEATHER_CSV), col_y1_name="Ветер", col_y2_name="Солнце")
     
     # 3. Запуск фонового потока чтения порта
     logger = serial_logger.SerialLoggerThread(port=COM_PORT, baudrate=9600, log_path=str(LOG_PATH))
