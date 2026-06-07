@@ -179,20 +179,29 @@ class SerialDeviceThread(QThread):
 
         # SOLAR DATA
         try:
-            numbers = list(map(int, line.split(';')))
+            
+            # 1. Убираем пробелы по краям и конечную точку с запятой
+            clean_line = line.strip().rstrip(';')
+            
+            numbers = list(map(int, clean_line.split(';')))
             if len(numbers) == 6:
                 self.device_type = DeviceType.SOLAR
                 with QMutexLocker(self.mutex):
                     self.last_solar_data = tuple(numbers)
+                print(f"[{self.port}] Получены данные SOLAR: {self.last_solar_data}") # Для отладки
                 return
-        except:
+        except ValueError:
+            # Если строка не является набором чисел, просто игнорируем её
             pass
+        except Exception as e:
+            # На этапе отладки полезно видеть другие неожиданные ошибки
+            print(f"[{self.port}] Ошибка парсинга SOLAR: {e} | Строка: '{line}'")
 
     def processNextionPacket(self, packet: bytes):
 
         try:
             text = packet.decode(
-                'iso-8859-5s',
+                'iso-8859-5',
                 errors='ignore'
             )
 
