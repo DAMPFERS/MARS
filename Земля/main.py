@@ -143,17 +143,25 @@ def main() -> None:
     update_timer = QTimer()
     update_timer.setInterval(10000)
     
+    current_idx = 0  # Глобальный индекс для активной точки графика
+    # Инициализация активной точки и отправка начальной погоды
+    window.set_active_point(current_idx)
+    window.update_plots()
+    server.setGameTick(current_idx)
+    
     def onTimerTick():
         
         global _is_weather_busy
+        nonlocal current_idx
         
         # --- Сдвиг активной точки графика ---
         current_idx = window.active_point_index
         if current_idx is None:
             current_idx = 0
         else:
-            max_idx = len(window.data) - 1 if window.data is not None else 0
-            current_idx = (current_idx + 1) % (max_idx + 1) if max_idx >= 0 else 0  # Циклический переход   
+            current_idx = (current_idx + 1) % 100  # Циклический переход (предполагая, что данных не менее 100 точек)
+            # max_idx = len(window.data) - 1 if window.data is not None else 0
+            # current_idx = (current_idx + 1) % (max_idx + 1) if max_idx >= 0 else 0  # Циклический переход   
         window.set_active_point(current_idx)
         window.update_plots()
         server.setGameTick(current_idx)

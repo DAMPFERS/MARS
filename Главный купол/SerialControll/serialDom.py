@@ -367,6 +367,14 @@ class DeviceManager:
             return False
         packet = cmd.encode() + b'\xFF\xFF\xFF'
         return nextion.send(packet)
+    
+    def stop(self):
+        """Корректно останавливает все потоки опроса COM-портов и закрывает соединения"""
+        print("[DeviceManager] Остановка всех потоков COM-портов...")
+        for dev in self.devices:
+            # Вызываем метод stop() у каждого потока SerialDeviceThread
+            dev.stop() 
+        print("[DeviceManager] Все потоки COM-портов остановлены")
 
 
 
