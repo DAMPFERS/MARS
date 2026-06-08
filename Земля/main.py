@@ -3,8 +3,9 @@ import sys
 import csv
 import numpy as np
 from pathlib import Path
-from PyQt5.QtWidgets import QApplication
-from PyQt5.QtCore import QTimer
+from PyQt5.QtCore import Qt, QTimer, QRectF, QSize  # Qt - константы выравнивания, QTimer - таймер для часов, QRectF - прямоугольник для рисования
+from PyQt5.QtGui import QColor, QPainter, QPen, QFont, QFontDatabase  # QColor - цвета, QPainter - рисование, QPen - перо/линии, QFont - шрифты
+from PyQt5.QtWidgets import QApplication, QFrame, QGraphicsDropShadowEffect, QGridLayout, QHBoxLayout, QLabel, QMainWindow, QVBoxLayout, QWidget, QSizePolicy  # Все виджеты
 import threading
 import io
 from contextlib import redirect_stdout
@@ -23,6 +24,9 @@ _is_weather_busy = False
 # ─── КОНФИГУРАЦИЯ ПУТЕЙ ───
 LOG_PATH = Path("data/logs/logi.csv")
 WEATHER_CSV = Path("data/weather/forecast.csv")
+# FONT_PATH = Path("GUI/assets/fonts/DPix_8pt.ttf")
+
+FONT_PATH = "GUI/assets/fonts/DPix_8pt.ttf"
 COM_PORT = "COM11"
 
 
@@ -115,9 +119,22 @@ def _sendWeatherTask(sun_val: int, wind_val: int) -> None:
 
 
 def main() -> None:
+    
     app = QApplication(sys.argv)
     
     # 1. Инициализация GUI
+    # Получаем текущий DPI экрана
+    screen = QApplication.primaryScreen()
+    dpi = screen.physicalDotsPerInch()
+    scale_factor = dpi / 96.0  # 96 DPI — стандартное значение
+    
+    font_id = QFontDatabase.addApplicationFont(FONT_PATH)
+    if font_id != -1:  # Если шрифт загрузился успешно
+        family = QFontDatabase.applicationFontFamilies(font_id)[0]
+        app.setFont(QFont(family, int(6 * scale_factor)))  # Применяем шрифт
+    else:
+        app.setFont(QFont("Consolas", int(6 * scale_factor)))  # Шрифт по умолчанию
+    
     
     window = GUI_MCC.MarsForecastApp()
     

@@ -5,9 +5,23 @@ import numpy as np  # Математические операции (генер�
 from datetime import datetime  # Получение текущего времени для часов в шапке
 
 # 9-18: Импорт модулей PyQt5
-from PyQt5.QtCore import Qt, QTimer, QRectF  # Qt - константы выравнивания, QTimer - таймер для часов, QRectF - прямоугольник для рисования
+from PyQt5.QtCore import Qt, QTimer, QRectF, QSize  # Qt - константы выравнивания, QTimer - таймер для часов, QRectF - прямоугольник для рисования
 from PyQt5.QtGui import QColor, QPainter, QPen, QFont, QFontDatabase  # QColor - цвета, QPainter - рисование, QPen - перо/линии, QFont - шрифты
 from PyQt5.QtWidgets import QApplication, QFrame, QGraphicsDropShadowEffect, QGridLayout, QHBoxLayout, QLabel, QMainWindow, QVBoxLayout, QWidget, QSizePolicy  # Все виджеты
+
+
+# Включаем поддержку High DPI
+QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
+QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps)
+
+
+from PyQt5.QtGui import QFont
+from PyQt5.QtCore import QSize, Qt
+# Получаем текущий DPI экрана
+# screen = QApplication.primaryScreen()
+# dpi = screen.physicalDotsPerInch()
+# scale_factor = dpi / 96.0  # 96 DPI — стандартное значение
+
 
 import pyqtgraph as pg  # Библиотека для графиков
 
@@ -96,7 +110,7 @@ class TelemetryPlotWidget(pg.PlotWidget):
         self.addItem(self.scatter)
 
         self.title_label = QLabel(title)  # Название графика
-        self.title_label.setStyleSheet(f"color: {CYAN}; font-size: 10px; padding-bottom: 4px;")
+        self.title_label.setStyleSheet(f"color: {CYAN}; font-size: 10pt; padding-bottom: 4pt;")
 
     def update_data(self, x, y, active_index=None):
         self.main_curve.setData(x, y)  # Обновляем основную линию
@@ -172,7 +186,7 @@ class StationWidget(QWidget):
         
         # Заголовок квадрата (например "ЭНЕРГЕТИКА")
         title_lbl = QLabel(title)
-        title_lbl.setStyleSheet(f"color: {CYAN}; font-size: 11px; font-weight: bold; border-bottom: 1px solid rgba(143,255,255,50); padding-bottom: 4px;")
+        title_lbl.setStyleSheet(f"color: {CYAN}; font-size: 11pt; font-weight: bold; border-bottom: 1pt solid rgba(143,255,255,50); padding-bottom: 4pt;")
         title_lbl.setAlignment(Qt.AlignCenter)  # Выравнивание заголовка по центру
         layout.addWidget(title_lbl)
         
@@ -184,18 +198,18 @@ class StationWidget(QWidget):
             
             # Название параметра (например "Потребление:")
             name_lbl = QLabel(f"{param_name}:")
-            name_lbl.setStyleSheet("color: rgba(143, 255, 255, 160); font-size: 10px;")
+            name_lbl.setStyleSheet("color: rgba(143, 255, 255, 160); font-size: 10pt;")
             name_lbl.setMinimumWidth(70)  # Минимальная ширина для выравнивания всех названий
             
             # Значение параметра (число)
             value_lbl = QLabel(default_value)
-            value_lbl.setStyleSheet(f"color: {GREEN}; font-size: 10px; font-weight: bold;")
+            value_lbl.setStyleSheet(f"color: {GREEN}; font-size: 10pt; font-weight: bold;")
             value_lbl.setAlignment(Qt.AlignRight)  # Выравнивание числа по правому краю
             value_lbl.setMinimumWidth(45)  # Минимальная ширина для выравнивания чисел
             
             # Единица измерения (МВт, Мбит/с, кг и т.д.)
             unit_lbl = QLabel(unit)
-            unit_lbl.setStyleSheet("color: rgba(143, 255, 255, 120); font-size: 9px;")
+            unit_lbl.setStyleSheet("color: rgba(143, 255, 255, 120); font-size: 9pt;")
             unit_lbl.setMinimumWidth(30)  # Минимальная ширина для выравнивания единиц
             
             param_layout.addWidget(name_lbl)  # Добавляем название
@@ -397,19 +411,19 @@ class MarsForecastApp(QMainWindow):
             QMainWindow {{ background-color: {APP_BG}; }}
             QWidget {{ background-color: transparent; color: {CYAN}; font-family: "DPix_8pt", monospace; }}
             
-            #hudPanel {{ background-color: {PANEL_BG}; border: 1px solid rgba(143,255,255,70); border-radius: 8px; }}
-            #panelTitle {{ color: {CYAN}; font-size: 12px; font-weight: bold; letter-spacing: 0.5px; }}
+            #hudPanel {{ background-color: {PANEL_BG}; border: 1pt solid rgba(143,255,255,70); border-radius: 8pt; }}
+            #panelTitle {{ color: {CYAN}; font-size: 12pt; font-weight: bold; letter-spacing: 0.5pt; }}
             
             #mainTitle {{ 
-                color: {CYAN}; font-size: 16px; font-weight: bold; letter-spacing: 1px; 
+                color: {CYAN}; font-size: 16pt; font-weight: bold; letter-spacing: 1pt; 
             }}
             #timeLabel {{ 
-                color: {GREEN}; font-size: 15px; font-weight: bold; padding: 0 4px;
+                color: {GREEN}; font-size: 15pt; font-weight: bold; padding: 0 4pt;
             }}
             
             #fullscreenBtn {{ 
                 color: {CYAN}; 
-                font-size: 18px; 
+                font-size: 18pt; 
                 background: transparent; 
                 border: none; 
                 padding: 0; margin: 0; line-height: 1;
@@ -418,7 +432,7 @@ class MarsForecastApp(QMainWindow):
             
             #closeBtn {{ 
                 color: {CYAN}; 
-                font-size: 16px; 
+                font-size: 16pt; 
                 background: transparent; 
                 border: none; 
                 padding: 0; margin: 0; line-height: 1;
@@ -459,9 +473,9 @@ if __name__ == "__main__":
     font_id = QFontDatabase.addApplicationFont(font_path)
     if font_id != -1:  # Если шрифт загрузился успешно
         family = QFontDatabase.applicationFontFamilies(font_id)[0]
-        app.setFont(QFont(family, 10))  # Применяем шрифт размером 10
+        app.setFont(QFont(family, 12 * scale_factor))  # Применяем шрифт размером 10
     else:
-        app.setFont(QFont("Consolas", 10))  # Шрифт по умолчанию
+        app.setFont(QFont("Consolas", 12 * scale_factor))  # Шрифт по умолчанию
 
     # Пытаемся прочитать forecast.csv, если нет - создаём тестовые данные
     try:
