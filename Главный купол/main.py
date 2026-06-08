@@ -10,20 +10,17 @@ from PyQt5.QtGui import QColor, QPainter, QPen, QFont, QFontDatabase, QGuiApplic
 from PyQt5.QtWidgets import QApplication, QFrame, QGraphicsDropShadowEffect, QHBoxLayout, QLabel, QMainWindow, QVBoxLayout, QWidget, QSizePolicy
 import threading
 import traceback
+import random
 
-
-# from LED import ledControl
+from LED import ledControl
 from GUI import GUI_Station_MARS
 from SerialControll import serialDom
+
+
 # from NextionWork import Nextion
 from tcp_data import localTCP
 
 
-
-
-# COM_PORT_DOM_ENERGY = "COM11"
-# COM_PORT_DOM_CONNECTION = "COM12"
-# COM_PORT_DOM_NEXTION = "COM13"
 
 STATION_ADDRESS = "0x15"
 STATION_ID = 1
@@ -37,10 +34,6 @@ WEATHER_CSV = Path("data/weather/forecast.csv")
 
 def main() -> None:
     
-    
-    
-    
-
     
     forecast_data = {
         "Солнце": (),
@@ -119,13 +112,19 @@ def main() -> None:
             res.append(forecast_data["Главный модуль"][i] + forecast_data["Модуль энергетики"][i] + forecast_data["Жилой модуль"][i] + forecast_data["Модуль связи"][i])
         forecast_data["Полное потребление"] = res
 
-    # 3. Запуск фонового потока чтения порта
-    # serial_manager = serialDom.DeviceManager(COM_PORT_DOM_CONNECTION, COM_PORT_DOM_ENERGY)
-    # print(f"[Main] Попытка запустить Поток чтения ком портов: {COM_PORT_DOM_CONNECTION}, {COM_PORT_DOM_ENERGY}")
+    # 3. Запуск менеджера COM-портов (Автоматический поиск всех устройств)
+    print("[Main] Инициализация менеджера COM-портов...")
+    serial_manager = serialDom.DeviceManager()
+    # Даем пару секунд на автоопределение устройств в фоновых потоках
+    # (Это не блокирует GUI, так как внутри DeviceManager используются QThread)
+    import time
+    time.sleep(2) 
+    print("[Main] Менеджер COM-портов запущен. Поиск устройств завершен")
+    
     
     # 4. Запуск фонового потока управления LED
-    # led_strip = ledControl.LEDStrip(num_leds=165, pin=18, led_type="RGB")
-    # print("[Main] Инициализация LED ленты завершена")
+    led_strip = ledControl.LEDStrip(num_leds=165, pin=18, led_type="RGB")
+    print("[Main] Инициализация LED ленты завершена")
     
     # 5. Запуск TCP соединения
     client = localTCP.StationTCPClient(IP_SERVER, PORT_SERVER)
@@ -137,11 +136,17 @@ def main() -> None:
     
     tick_count = 0
     tact_game = 0
+    old_state_panels = 0
+    
+    # Новая переменная для отслеживания ручного режима
+    is_manual_mode_active = False
+    
     
     def onTimerTick():
         nonlocal tick_count
         nonlocal tact_game
-        
+        nonlocal old_state_panels
+        nonlocal is_manual_mode_active
         nonlocal energy_data
         nonlocal connection_data
         nonlocal material_data
@@ -158,38 +163,116 @@ def main() -> None:
         tact_game = status['game_tick'] 
         
         
-        # ПРОВЕРКА И ПРИМЕНЕНИЕ ОБНОВЛЕНИЙ ОТ АДМИНА (кейс по энергетике)
-        admin_updates = client.get_pending_admin_updates()
-        if admin_updates is not None:
-            print("[Main] ⚠️ Получены обновления данных от администратора!")
+        # Проверка статуса Nextion
+        nextion_device = serial_manager.getNextion()
+        manual_mode_requested = False
         
-        for frame in admin_updates.get("frames", []):
-            frame_data = frame.get("data", {})
-            index_file = frame_data.get("index_file", 1)
+        if nextion_device and nextion_device.nextion_connected:
+            settings = nextion_device.page_settings
+            colors = nextion_device.page_color
             
-            # Логика среза совпадает с логикой в скрипте админа
-            start_idx = (index_file - 1) * 25
-            end_idx = start_idx + 25
+            # Проверяем, включен ли ручной режим на экране
+            manual_mode_requested = (settings.get("Manual mode:", 0) == 1)
+       
+        # =========================================================================
+        # === ЛОГИКА РУЧНОГО РЕЖИМА ===
+        # =========================================================================
+        if manual_mode_requested:
+            is_manual_mode_active = True
             
-            columns_to_update = [
-                "Главный модуль", "Модуль связи", "Жилой модуль", 
-                "Модуль энергетики", "Состояние панелей"
-            ]
+            # 1. Управление панелями
+            panel1_state = settings.get("Panel 1", 0)
+            panel2_state = settings.get("Panel 2", 0)
             
-            # 1. Обновляем оперативные данные (forecast_data)
-            for col_name in columns_to_update:
-                if col_name in frame_data:
-                    new_values = frame_data[col_name]
-                    current_list = list(forecast_data[col_name]) # Гарантируем тип list
+            angle1 = 250 if panel1_state == 1 else 10
+            angle2 = 250 if panel2_state == 1 else 10
+            serial_manager.sendSolarAngles(angle1, angle2)
+            
+            # 2. Управление подсветкой модулей
+            # Считываем глобальные настройки цвета и яркости с экрана
+            r = 255 if colors.get("Red:", 0) == 1 else 0
+            g = 255 if colors.get("Green:", 0) == 1 else 0
+            b = 255 if colors.get("Blue:", 0) == 1 else 0
+            power = colors.get("Power:", 120) # 0-255
+            
+            target_color = (r, g, b)
+            
+            # Словарь связывает: имя модуля -> (имя флага цвета, индекс секции ленты)
+            modules_map = {
+                "Main module:": ("Main color:", 0),
+                "Conn module:": ("Conn color:", 1),
+                "Live module:": ("Live color:", 2),
+                "Energ module:": ("Energ color:", 3)
+            }
+            
+            for mod_name, (color_flag_name, section_idx) in modules_map.items():
+                # Проверяем ОБА условия: модуль включен И его цветовой флаг включен
+                mod_is_on = (settings.get(mod_name, 0) == 1)
+                color_is_on = (colors.get(color_flag_name, 0) == 1)
+                
+                if mod_is_on and color_is_on:
+                    led_strip.set_section_color(section_idx, target_color)
+                    led_strip.set_section_brightness(section_idx, power)
+                else:
+                    # Если хотя бы одно условие не выполнено, гасим этот модуль
+                    led_strip.set_section_color(section_idx, (0, 0, 0))
+                    led_strip.set_section_brightness(section_idx, 0)
                     
-                    if len(new_values) == (end_idx - start_idx) and len(current_list) >= end_idx:
-                        # Обновляем конкретный срез (25 значений)
-                        current_list[start_idx:end_idx] = new_values
-                    else:
-                        # Fallback: если пришли все 100 значений, заменяем полностью
-                        current_list = list(new_values)
-                    
-                    forecast_data[col_name] = current_list
+            led_strip.show()
+            
+            # Обновляем GUI статусом, чтобы было видно в интерфейсе
+            telemetry_manual = {
+                "Статус линка": "РУЧНОЙ РЕЖИМ",
+                "Статус линка_style": "color: #FFB800; font-size: 14px; font-weight: bold; "
+            }
+            window.update_from_main(telemetry_manual)
+            
+            # ВАЖНО: Прерываем выполнение функции, чтобы автоматическая логика не сработала
+            return 
+
+
+
+        # =========================================================================
+        # === ЛОГИКА АВТОМАТИЧЕСКОГО РЕЖИМА ===
+        # =========================================================================
+        if is_manual_mode_active:
+            # Если мы только что вышли из ручного режима, сбрасываем флаг
+            is_manual_mode_active = False
+            print("[Main] Возврат к автоматическому режиму")   
+        
+        
+        # 0. ПРОВЕРКА И ПРИМЕНЕНИЕ ОБНОВЛЕНИЙ ОТ АДМИНА (кейс по энергетике)
+        admin_updates = client.getPendingAdminUpdates()
+        if admin_updates is not None:
+            print("[Main] Получены обновления данных от администратора!")
+        
+            for frame in admin_updates.get("frames", []):
+                frame_data = frame.get("data", {})
+                index_file = frame_data.get("index_file", 1)
+                
+                # Логика среза совпадает с логикой в скрипте админа
+                start_idx = (index_file - 1) * 25
+                end_idx = start_idx + 25
+                
+                columns_to_update = [
+                    "Главный модуль", "Модуль связи", "Жилой модуль", 
+                    "Модуль энергетики", "Состояние панелей"
+                ]
+                
+                # 1. Обновляем оперативные данные (forecast_data)
+                for col_name in columns_to_update:
+                    if col_name in frame_data:
+                        new_values = frame_data[col_name]
+                        current_list = list(forecast_data[col_name]) # Гарантируем тип list
+                        
+                        if len(new_values) == (end_idx - start_idx) and len(current_list) >= end_idx:
+                            # Обновляем конкретный срез (25 значений)
+                            current_list[start_idx:end_idx] = new_values
+                        else:
+                            # Fallback: если пришли все 100 значений, заменяем полностью
+                            current_list = list(new_values)
+                        
+                        forecast_data[col_name] = current_list
 
             # 2. Пересчитываем "Полное потребление", так как компоненты изменились
             res = []
@@ -223,13 +306,61 @@ def main() -> None:
         
         # Обновление значений генерации с COM-порта (купол энергетики)
         # energy_data["generation"] = serial_manager.getLastDataSolarPanels() 
-        if energy_data["generation"] is None:
+        solar_device = serial_manager.getSolar()
+        if solar_device and solar_device.last_solar_data:
+            energy_data["generation"] = list(solar_device.last_solar_data)
+        else:
             energy_data["generation"] = [0] * 6
+        
         energy_data["full_generation"] = sum(energy_data["generation"])
         
         
         # Баланс энергии: если генерация превышает потребление, заряжаем батареи, иначе разряжаем
         delta = energy_data["full_generation"] - forecast_data["Полное потребление"][tact_game]
+        # === УПРАВЛЕНИЕ ПОДСВЕТКОЙ МОДУЛЕЙ ===
+        # 1. Определяем текущий такт с защитой от выхода за границы списка
+        safe_tact = tact_game % len(forecast_data["Главный модуль"])
+        
+        # 2. Определяем цвет на основе энергобаланса (delta уже рассчитан выше)
+        if delta >= 0:
+            # Энергии достаточно: Зелено-голубой спектр с небольшим шумом
+            # R: почти 0, G: высокий (180-255), B: высокий (150-255)
+            r = random.randint(0, 40)
+            g = random.randint(180, 255)
+            b = random.randint(150, 255)
+            target_color = (r, g, b)
+        else:
+            # Энергии не хватает: Красный спектр (можно добавить легкое мерцание через шум в G)
+            r = 255
+            g = random.randint(0, 60)
+            b = 0
+            target_color = (r, g, b)
+
+        # 3. Сопоставляем модули с секциями ленты и обновляем их
+        modules_mapping = [
+            "Главный модуль",       # Секция 0
+            "Модуль связи",         # Секция 1
+            "Жилой модуль",         # Секция 2
+            "Модуль энергетики"     # Секция 3
+        ]
+        
+        for section_idx, module_name in enumerate(modules_mapping):
+            # Получаем прогноз потребления (гарантируем, что число в диапазоне 0-100)
+            forecast_val = forecast_data[module_name][safe_tact]
+            forecast_val = max(0.0, min(100.0, float(forecast_val)))
+            
+            # Конвертируем 0-100 в яркость 0-255
+            brightness = int(forecast_val * 2.55)
+            
+            # Применяем к ленте
+            led_strip.set_section_color(section_idx, target_color)
+            led_strip.set_section_brightness(section_idx, brightness)
+
+        # 4. Отправляем обновленные данные на физическую ленту
+        led_strip.show()
+            
+        
+        
         if delta >= 0: # достаточно энергии для покрытия потребления
             for i in range(3):
                 if energy_data[f"battery{i+1}_level"] < energy_data["max_battery_level"]:
@@ -247,6 +378,10 @@ def main() -> None:
                     delta -= (old_level - energy_data[f"battery{i+1}_level"])  # Уменьшаем delta на то, что отняли из батареи
                     if delta <= 0:
                         break
+        if forecast_data["Состояние панелей"][tact_game] != old_state_panels:
+            serial_manager.sendSolarAngles(250, 250) if forecast_data["Состояние панелей"][tact_game] == 1 else serial_manager.sendSolarAngles(10, 10) # Угол 250 - панели раскрыты, угол 10 - панели сложены
+            old_state_panels = forecast_data["Состояние панелей"][tact_game]
+        
         
             
         # 3. Формирование телеметрии для GUI
@@ -330,15 +465,21 @@ def main() -> None:
             pass
         
         if tick_count % 10 == 1: # отправка данных в купол связи каждые 10 секунд
-            gen = int(energy_data["full_generation"] * 255 / (1024 * 4))  # Масштабируем генерацию до диапазона 0-255
-            gen = gen.to_bytes(1, byteorder='big', signed=False)
+            # 1. Отправка в купол связи (Transmitter)
+            gen_byte = int(energy_data["full_generation"] * 255 / (1024 * 4)).to_bytes(1, byteorder='big', signed=False)
             
-            consumption = int(forecast_data["Полное потребление"][tact_game] * 255 / max(forecast_data["Полное потребление"]))  # Масштабируем потребление до диапазона 0-255
-            consumption = consumption.to_bytes(1, byteorder='big', signed=False)
-            # serial_manager.sendToDeviceCommunication(gen + consumption)  # Отправляем данные в купол связи
+            # Защита от деления на ноль, если потребление пока нулевое
+            max_cons = max(forecast_data["Полное потребление"]) if max(forecast_data["Полное потребление"]) > 0 else 1
+            cons_byte = int(forecast_data["Полное потребление"][tact_game] * 255 / max_cons).to_bytes(1, byteorder='big', signed=False)
             
-            # serial_manager.sendToDeviceCommunication(b'\x01\x02\x03')  # Пример отправки данных в купол связи
-            # serial_manager.sendToDeviceSolarPanels(45, 90)  # Пример отправ
+            # Отправляем (DeviceManager сам добавит \xFE в начало и \xFF\xFF\xFF в конец)
+            serial_manager.sendToDeviceCommunication(gen_byte + cons_byte)
+
+            # 2. Отправка углов в Solar (если нужно управлять панелями)
+            # serial_manager.sendSolarAngles(45, 90)
+            
+            # 3. Отправка команды на экран Nextion
+            # serial_manager.sendNextionCommand('t0.txt="HELLO"')
         
         
             
@@ -358,7 +499,7 @@ def main() -> None:
             client.stop()
             print("[Main] TCP-клиент остановлен")
 
-            # serial_manager.stop()
+            serial_manager.stop()
             print("[Main] Менеджер COM-портов остановлен")
 
         except Exception as e:

@@ -41,7 +41,37 @@ clear(self): отключение всех светодиодов.
 """
 
 import numpy as np
-from rpi_ws281x import PixelStrip, Color
+import time
+import threading
+
+try:
+    from rpi_ws281x import PixelStrip, Color
+    IS_RASPBERRY_PI = True
+except ImportError:
+    IS_RASPBERRY_PI = False
+    print("[LED] Библиотека rpi_ws281x не найдена. Включен режим эмуляции (Mock) для разработки на ПК")
+    
+    # Создаем классы-заглушки, чтобы код не падал на ноутбуке
+    class Color:
+        def __init__(self, r, g, b, w=0):
+            self.r, self.g, self.b, self.w = r, g, b, w
+
+    class PixelStrip:
+        def __init__(self, num_leds, pin):
+            self.num_leds = num_leds
+            self.pin = pin
+            print(f"[LED Эмуляция] Создана виртуальная лента: {num_leds} LED, пин {pin}")
+        
+        def begin(self):
+            print("[LED Эмуляция] Лента инициализирована (begin)")
+        
+        def show(self):
+            # print("[LED Эмуляция] Вызван метод show()") # Раскомментируйте для отладки
+            pass
+        
+        def setPixelColor(self, pixel_index, color):
+            pass
+
 
 class LEDStrip:
     
