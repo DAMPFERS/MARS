@@ -14,6 +14,7 @@ import random
 
 from LED import ledControl
 from GUI import GUI_Station_MARS
+from GUI.ui_scale import sp, sx
 from SerialControll import serialDom
 
 
@@ -79,16 +80,24 @@ def main() -> None:
 
     sys.excepthook = handle_exception
     
+    # Включаем поддержку High DPI
+    QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
+    QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps)
     
     app = QApplication(sys.argv)
+    
+    # Получаем текущий DPI экрана
+    # screen = QApplication.primaryScreen()
+    # dpi = screen.physicalDotsPerInch()
+    # scale_factor = dpi / 96.0  # 96 DPI — стандартное значение
     
     # 1. Инициализация GUI
     font_id = QFontDatabase.addApplicationFont(FONTH_PATH)  # Загрузка шрифта
     if font_id != -1:
         family = QFontDatabase.applicationFontFamilies(font_id)[0]
-        app.setFont(QFont(family, 10))
+        app.setFont(QFont(family, int(10)))  # Масштабируем размер шрифта в зависимости от DPI
     else:
-        app.setFont(QFont("Consolas", 10))
+        app.setFont(QFont("Consolas", int(10)))
     
     window = GUI_Station_MARS.Mars1App()
     # 2. Подготовка/загрузка данных погоды
@@ -223,7 +232,7 @@ def main() -> None:
             # Обновляем GUI статусом, чтобы было видно в интерфейсе
             telemetry_manual = {
                 "Статус линка": "РУЧНОЙ РЕЖИМ",
-                "Статус линка_style": "color: #FFB800; font-size: 14px; font-weight: bold; "
+                "Статус линка_style": "color: #FFB800; font-size: 14pt; font-weight: bold; "
             }
             window.update_from_main(telemetry_manual)
             
@@ -399,7 +408,7 @@ def main() -> None:
             telemetry[f"cons_{i}"] = f"{val:.2f}"
             # Пороговая окраска
             col = "#FF4D4D" if val > 5.0 else "#FFB800" if val > 4.2 else "#00FF9D"
-            telemetry[f"cons_{i}_style"] = f"color: {col}; font-size: 12px; font-weight: bold;"
+            telemetry[f"cons_{i}_style"] = f"color: {col}; font-size: {sx(12)}pt; font-weight: bold;"
         
         # Батареи
         max_lvl = energy_data["max_battery_level"]
@@ -424,20 +433,20 @@ def main() -> None:
         h, m, s = tick_count // 3600, (tick_count % 3600) // 60, tick_count % 60
         telemetry["Время сеанса"] = f"{h:02}:{m:02}:{s:02}"
         telemetry["Статус линка"] = "ONLINE"
-        telemetry["Статус линка_style"] = f"color: #00FF9D; font-size: 12px; font-weight: bold;"
+        telemetry["Статус линка_style"] = f"color: #00FF9D; font-size: {sx(12)}pt; font-weight: bold;"
         
         # h2 = 85.5 + np.random.uniform(-2, 2)
         h2 = rover_data["charge"] + np.random.uniform(-2, 2)
         rover_data["charge"] = h2  # Обновляем заряд в данных ровера
         telemetry["Уровень H₂"] = f"{h2:.1f}"
-        telemetry["Уровень H₂_style"] = f"color: {'#FF4D4D' if h2 < 20 else '#00FF9D'}; font-size: 12px; font-weight: bold;"
+        telemetry["Уровень H₂_style"] = f"color: {'#FF4D4D' if h2 < 20 else '#00FF9D'}; font-size: {sx(12)}pt; font-weight: bold;"
         telemetry["Давление в системе"] = f"{35.0 + np.random.uniform(-0.5, 0.5):.1f}"
         telemetry["Температура ячейки"] = f"{82 + np.random.uniform(-3, 3):.0f}"
         telemetry["Выходная мощность"] = f"{12.4 + np.random.uniform(-0.8, 0.8):.1f}"
         rover_data["distance"] += np.random.uniform(0.5, 1.5)  # Увеличиваем дистанцию
         telemetry["Запас хода"] = f"{rover_data["distance"]:.1f}"
         telemetry["Статус привода"] = rover_data["status"]
-        telemetry["Статус привода_style"] = f"color: #00FF9D; font-size: 12px; font-weight: bold;"
+        telemetry["Статус привода_style"] = f"color: #00FF9D; font-size: {sx(12)}pt; font-weight: bold;"
 
         # 4. Отправка в GUI
         window.update_from_main(telemetry)

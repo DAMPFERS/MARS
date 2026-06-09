@@ -5,6 +5,9 @@ from PyQt5.QtCore import Qt, QTimer, QRectF
 from PyQt5.QtGui import QColor, QPainter, QPen, QFont, QFontDatabase, QGuiApplication
 from PyQt5.QtWidgets import QApplication, QFrame, QGraphicsDropShadowEffect, QHBoxLayout, QLabel, QMainWindow, QVBoxLayout, QWidget, QSizePolicy
 
+# from ui_scale import sx, sp
+from GUI.ui_scale import sx, sp
+
 # === ГЛОБАЛЬНЫЕ СТИЛИ (без изменений) ===
 APP_BG = "#111B2E"
 PANEL_BG = "rgba(5, 10, 20, 200)"
@@ -15,10 +18,10 @@ RED = "#FF4D4D"
 DARK_CYAN = "rgba(143, 255, 255, 30)"
 ROW_BG = "rgba(5, 10, 20, 100)"
 
-FONT_LABEL = f"color: {CYAN}; font-size: 11px;"
-FONT_VALUE = f"color: {GREEN}; font-size: 12px; font-weight: bold;"
-FONT_UNIT  = f"color: {CYAN}; font-size: 10px;"
-FONT_TITLE = f"color: {CYAN}; font-size: 12px; font-weight: bold;"
+FONT_LABEL = f"color: {CYAN}; font-size: {sp(11)}pt;"
+FONT_VALUE = f"color: {GREEN}; font-size: {sp(12)}pt; font-weight: bold;"
+FONT_UNIT  = f"color: {CYAN}; font-size: {sp(10)}pt;"
+FONT_TITLE = f"color: {CYAN}; font-size: {sp(12)}pt; font-weight: bold;"
 
 class HUDPanel(QFrame):
     def __init__(self, title="", parent=None):
@@ -26,8 +29,8 @@ class HUDPanel(QFrame):
         self.setObjectName("hudPanel")
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         self.layout = QVBoxLayout(self)
-        self.layout.setContentsMargins(12, 10, 12, 10)
-        self.layout.setSpacing(8)
+        self.layout.setContentsMargins(sx(12), sx(10), sx(12), sx(10))
+        self.layout.setSpacing(sx(8))
         h_layout = QHBoxLayout()
         h_layout.setContentsMargins(0, 0, 0, 0)
         self.title_label = QLabel(title)
@@ -39,7 +42,7 @@ class HUDPanel(QFrame):
         self.content_layout.setContentsMargins(0, 0, 0, 0)
         self.layout.addLayout(self.content_layout, stretch=1)
         glow = QGraphicsDropShadowEffect()
-        glow.setBlurRadius(18)
+        glow.setBlurRadius(sx(18))
         glow.setColor(QColor(143, 255, 255, 60))
         glow.setOffset(0)
         self.setGraphicsEffect(glow)
@@ -50,9 +53,9 @@ class HUDPanel(QFrame):
         painter.setRenderHint(QPainter.Antialiasing)
         rect = self.rect()
         pen = QPen(QColor(CYAN))
-        pen.setWidth(2)
+        pen.setWidth(sx(2))
         painter.setPen(pen)
-        size = 14
+        size = sx(14)
         painter.drawLine(0, size, 0, 0)
         painter.drawLine(0, 0, size, 0)
         painter.drawLine(rect.width() - size, 0, rect.width(), 0)
@@ -67,7 +70,7 @@ class ChargeBarWidget(QWidget):
         super().__init__()
         self.level = 0.0
         self.label = label
-        self.setMinimumHeight(28)
+        self.setMinimumHeight(sx(28))
     def set_level(self, value):
         self.level = max(0.0, min(1.0, value))
         self.update()
@@ -82,25 +85,28 @@ class ChargeBarWidget(QWidget):
         w, h = self.width(), self.height()
         painter.setPen(QPen(QColor(CYAN), 1))
         painter.setBrush(QColor(DARK_CYAN))
-        painter.drawRoundedRect(QRectF(1, 1, w - 2, h - 2), 3, 3)
+        
+        m1 = sx(1)
+        m3 = sx(3)
+        painter.drawRoundedRect(QRectF(m1, m1, w - 2*m1, h - 2*m1), 3, 3)
         fill_w = (w - 6) * self.level
         color = QColor(self._get_color())
         color.setAlpha(180)
         painter.setPen(Qt.NoPen)
         painter.setBrush(color)
-        if fill_w > 4:
-            painter.drawRoundedRect(QRectF(3, 3, fill_w, h - 6), 2, 2)
+        if fill_w > sx(4):
+            painter.drawRoundedRect(QRectF(m3, m3, fill_w, h - 2*m3), 2, 2)
         painter.setPen(QPen(QColor(0, 0, 0, 80), 1))
         for i in range(1, 10):
-            x = 3 + (w - 6) * (i / 10)
-            painter.drawLine(int(x), 3, int(x), int(h - 3))
+            x = m3 + (w - 2*m3) * (i / 10)
+            painter.drawLine(int(x), m3, int(x), int(h - m3))
         painter.setPen(QColor(255, 255, 255, 220))
         font = painter.font()
-        font.setPixelSize(11); font.setBold(False)
+        font.setPixelSize(sx(11)); font.setBold(False)
         painter.setFont(font)
         painter.drawText(QRectF(6, 0, w * 0.4, h), Qt.AlignVCenter | Qt.AlignLeft, self.label)
         painter.setPen(QColor(255, 255, 255, 250))
-        font.setBold(True); font.setPixelSize(12)
+        font.setBold(True); font.setPixelSize(sx(12))
         painter.setFont(font)
         painter.drawText(QRectF(w * 0.4, 0, w * 0.6 - 6, h), Qt.AlignVCenter | Qt.AlignRight, f"{self.level * 100:.0f}%")
 
@@ -112,15 +118,15 @@ class StationStatusWidget(QWidget):
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(6)
         frame = QFrame()
-        frame.setStyleSheet("background: rgba(0,0,0,60); border: 1px solid rgba(143,255,255,25); border-radius: 3px;")
+        frame.setStyleSheet("background: rgba(0,0,0,60); border: 1pt solid rgba(143,255,255,25); border-radius: 3pt;")
         f_layout = QVBoxLayout(frame)
-        f_layout.setContentsMargins(8, 6, 8, 6)
-        f_layout.setSpacing(4)
+        f_layout.setContentsMargins(sx(8), sx(6), sx(8), sx(6))
+        f_layout.setSpacing(sx(4))
         # 🔑 Ключи очищены от пробелов
         metrics = [("Давление", "кПа"), ("Кислород", "%"), ("Углекислый газ", "ppm"), ("Герметичность", "%"), ("Температура", "°C")]
         for name, unit in metrics:
             r = QHBoxLayout()
-            r.setContentsMargins(4, 2, 4, 2)
+            r.setContentsMargins(sx(4), sx(2), sx(4), sx(2))
             r.addWidget(QLabel(f"{name}: ", styleSheet=FONT_LABEL))
             r.addStretch()
             lbl_v = QLabel("0")
@@ -140,10 +146,10 @@ class CommsDetailWidget(QWidget):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         frame = QFrame()
-        frame.setStyleSheet("background: rgba(0,0,0,60); border: 1px solid rgba(143,255,255,25); border-radius: 3px;")
+        frame.setStyleSheet("background: rgba(0,0,0,60); border: 1pt solid rgba(143,255,255,25); border-radius: 3pt;")
         f_layout = QVBoxLayout(frame)
-        f_layout.setContentsMargins(6, 5, 6, 5)
-        f_layout.setSpacing(2)
+        f_layout.setContentsMargins(sx(6), sx(5), sx(6), sx(5))
+        f_layout.setSpacing(sx(2))
         params = [
             ("Мощность лазера", "0", "Вт"), ("Длина волны", "1550", "нм"), ("Скорость канала", "0", "Мбит/с"),
             ("Буфер передачи", "0", "%"), ("Сигнал/Шум", "0", "dB"), ("Ошибки пакетов", "0", "/ч"),
@@ -151,7 +157,7 @@ class CommsDetailWidget(QWidget):
         ]
         for name, def_val, unit in params:
             r = QHBoxLayout()
-            r.setContentsMargins(4, 2, 4, 2)
+            r.setContentsMargins(sx(4), sx(2), sx(4), sx(2))
             r.addWidget(QLabel(f"{name}: ", styleSheet=FONT_LABEL))
             r.addStretch()
             val = QLabel(def_val)
@@ -172,17 +178,17 @@ class RoverDetailWidget(QWidget):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         frame = QFrame()
-        frame.setStyleSheet("background: rgba(0,0,0,60); border: 1px solid rgba(143,255,255,25); border-radius: 3px;")
+        frame.setStyleSheet("background: rgba(0,0,0,60); border: 1pt solid rgba(143,255,255,25); border-radius: 3pt;")
         f_layout = QVBoxLayout(frame)
-        f_layout.setContentsMargins(6, 5, 6, 5)
-        f_layout.setSpacing(2)
+        f_layout.setContentsMargins(sx(6), sx(5), sx(6), sx(5))
+        f_layout.setSpacing(sx(2))
         params = [
             ("Уровень H₂", "0", "%"), ("Давление в системе", "0", "МПа"), ("Температура ячейки", "0", "°C"),
             ("Выходная мощность", "0", "кВт"), ("Запас хода", "0", "км"), ("Статус привода", "Активен", "")
         ]
         for name, def_val, unit in params:
             r = QHBoxLayout()
-            r.setContentsMargins(4, 2, 4, 2)
+            r.setContentsMargins(sx(4), sx(2), sx(4), sx(2))
             r.addWidget(QLabel(f"{name}: ", styleSheet=FONT_LABEL))
             r.addStretch()
             val = QLabel(def_val)
@@ -202,33 +208,33 @@ class EnergyDetailWidget(QWidget):
         self.labels = {}
         self.charge_bars = []
         main_layout = QVBoxLayout(self)
-        main_layout.setContentsMargins(4, 4, 4, 4)
-        main_layout.setSpacing(6)
-        
+        main_layout.setContentsMargins(sx(4), sx(4), sx(4), sx(4))
+        main_layout.setSpacing(sx(6))
+
         # ГЕНЕРАЦИЯ
         gen_frame = QFrame()
-        gen_frame.setStyleSheet(f"background: {ROW_BG}; border: 1px solid rgba(143,255,255,40); border-radius: 4px;")
+        gen_frame.setStyleSheet(f"background: {ROW_BG}; border: 1pt solid rgba(143,255,255,40); border-radius: 4pt  ;")
         gen_main = QVBoxLayout(gen_frame)
-        gen_main.setContentsMargins(8, 6, 8, 6)
-        gen_main.setSpacing(5)
+        gen_main.setContentsMargins(sx(8), sx(6), sx(8), sx(6))
+        gen_main.setSpacing(sx(5))
         gen_title = QLabel("Генерация (Солнечные панели)")
         gen_title.setStyleSheet(FONT_TITLE)
         gen_title.setAlignment(Qt.AlignCenter)
         gen_main.addWidget(gen_title)
         gen_h = QHBoxLayout()
-        gen_h.setSpacing(8)
+        gen_h.setSpacing(sx(8))
         for block in ["Блок А", "Блок Б"]:
             b_frame = QFrame()
-            b_frame.setStyleSheet("background: rgba(0,0,0,80); border: 1px solid rgba(143,255,255,25); border-radius: 3px;")
+            b_frame.setStyleSheet("background: rgba(0,0,0,80); border: 1pt solid rgba(143,255,255,25); border-radius: 3pt;")
             b_layout = QVBoxLayout(b_frame)
-            b_layout.setContentsMargins(6, 5, 6, 5)
-            b_layout.setSpacing(2)
+            b_layout.setContentsMargins(sx(6), sx(5), sx(6), sx(5))
+            b_layout.setSpacing(sx(2))
             b_lbl = QLabel(block)
-            b_lbl.setStyleSheet(f"color: {YELLOW}; font-size: 11px; font-weight: bold; border-bottom: 1px solid rgba(143,255,255,40); padding-bottom: 3px;")
+            b_lbl.setStyleSheet(f"color: {YELLOW}; font-size: 11pt; font-weight: bold; border-bottom: 1pt solid rgba(143,255,255,40); padding-bottom: 3pt;")
             b_lbl.setAlignment(Qt.AlignCenter)
             b_layout.addWidget(b_lbl)
             for i in range(6):
-                r = QHBoxLayout(); r.setContentsMargins(2, 1, 2, 1)
+                r = QHBoxLayout(); r.setContentsMargins(sx(2), sx(1), sx(2), sx(1))
                 r.addWidget(QLabel(f"Панель {i+1}: ", styleSheet=FONT_LABEL))
                 v = QLabel("0.00"); v.setAlignment(Qt.AlignRight); v.setStyleSheet(FONT_VALUE)
                 r.addWidget(v); r.addWidget(QLabel("МВт", styleSheet=FONT_UNIT))
@@ -239,7 +245,7 @@ class EnergyDetailWidget(QWidget):
             gen_h.addWidget(b_frame, stretch=1)
         gen_main.addLayout(gen_h)
         total_gen_layout = QHBoxLayout()
-        total_gen_layout.setContentsMargins(4, 2, 4, 2)
+        total_gen_layout.setContentsMargins(sx(4), sx(2), sx(4), sx(2))
         total_gen_layout.addWidget(QLabel("Общая генерация: ", styleSheet=FONT_LABEL))
         total_gen_layout.addStretch()
         self.labels["total_gen"] = QLabel("0.00 МВт")
@@ -250,10 +256,10 @@ class EnergyDetailWidget(QWidget):
 
         # НАКОПИТЕЛИ
         acc_frame = QFrame()
-        acc_frame.setStyleSheet(f"background: {ROW_BG}; border: 1px solid rgba(143,255,255,40); border-radius: 4px;")
+        acc_frame.setStyleSheet(f"background: {ROW_BG}; border: 1pt solid rgba(143,255,255,40); border-radius: 4pt  ;")
         acc_layout = QVBoxLayout(acc_frame)
-        acc_layout.setContentsMargins(8, 6, 8, 6)
-        acc_layout.setSpacing(5)
+        acc_layout.setContentsMargins(sx(8), sx(6), sx(8), sx(6))
+        acc_layout.setSpacing(sx(5))
         acc_title = QLabel("Накопители энергии")
         acc_title.setStyleSheet(FONT_TITLE)
         acc_title.setAlignment(Qt.AlignCenter)
@@ -265,7 +271,7 @@ class EnergyDetailWidget(QWidget):
             self.charge_bars.append(bar)
             acc_layout.addWidget(bar)
         total_acc_layout = QHBoxLayout()
-        total_acc_layout.setContentsMargins(4, 2, 4, 2)
+        total_acc_layout.setContentsMargins(sx(4), sx(2), sx(4), sx(2))
         total_acc_layout.addWidget(QLabel("Общий заряд: ", styleSheet=FONT_LABEL))
         total_acc_layout.addStretch()
         self.labels["total_acc"] = QLabel("0 МВт·ч")
@@ -276,23 +282,23 @@ class EnergyDetailWidget(QWidget):
 
         # ПОТРЕБЛЕНИЕ
         con_frame = QFrame()
-        con_frame.setStyleSheet(f"background: {ROW_BG}; border: 1px solid rgba(143,255,255,40); border-radius: 4px;")
+        con_frame.setStyleSheet(f"background: {ROW_BG}; border: 1pt solid rgba(143,255,255,40); border-radius: 4pt  ;")
         con_main_layout = QVBoxLayout(con_frame)
-        con_main_layout.setContentsMargins(8, 6, 8, 6)
-        con_main_layout.setSpacing(4)
+        con_main_layout.setContentsMargins(sx(8), sx(6), sx(8), sx(6))
+        con_main_layout.setSpacing(sx(4))
         con_title = QLabel("Потребление по модулям")
         con_title.setStyleSheet(FONT_TITLE)
         con_title.setAlignment(Qt.AlignCenter)
         con_main_layout.addWidget(con_title)
         inner_frame = QFrame()
-        inner_frame.setStyleSheet("background: rgba(0,0,0,60); border: 1px solid rgba(143,255,255,25); border-radius: 3px;")
+        inner_frame.setStyleSheet("background: rgba(0,0,0,60); border: 1pt solid rgba(143,255,255,25); border-radius: 3pt;")
         inner_layout = QVBoxLayout(inner_frame)
-        inner_layout.setContentsMargins(6, 5, 6, 5)
-        inner_layout.setSpacing(2)
+        inner_layout.setContentsMargins(sx(6), sx(5), sx(6), sx(5))
+        inner_layout.setSpacing(sx(2))
         consumers = ["Жилой", "Связи", "Энергетический", "Центральный"]
         for i, name in enumerate(consumers):
             r = QHBoxLayout()
-            r.setContentsMargins(4, 2, 4, 2)
+            r.setContentsMargins(sx(4), sx(2), sx(4), sx(2))
             r.addWidget(QLabel(f"{name}: ", styleSheet=FONT_LABEL))
             v_lbl = QLabel("0.00")
             v_lbl.setStyleSheet(FONT_VALUE)
@@ -304,7 +310,7 @@ class EnergyDetailWidget(QWidget):
         con_main_layout.addWidget(inner_frame, stretch=1)
         con_main_layout.addStretch()
         total_con_layout = QHBoxLayout()
-        total_con_layout.setContentsMargins(4, 2, 4, 2)
+        total_con_layout.setContentsMargins(sx(4), sx(2), sx(4), sx(2))
         total_con_layout.addWidget(QLabel("Общее потребление: ", styleSheet=FONT_LABEL))
         total_con_layout.addStretch()
         self.labels["total_cons"] = QLabel("0.00 МВт")
@@ -344,17 +350,17 @@ class Mars1App(QMainWindow):
         central = QWidget()
         self.setCentralWidget(central)
         self.main_layout = QVBoxLayout(central)
-        self.main_layout.setContentsMargins(10, 10, 10, 10)
-        self.main_layout.setSpacing(5)
+        self.main_layout.setContentsMargins(sx(10), sx(10), sx(10), sx(10))
+        self.main_layout.setSpacing(sx(5))
         self.create_header()
         content_widget = QWidget()
         content_layout = QHBoxLayout(content_widget)
         content_layout.setContentsMargins(0, 0, 0, 0)
-        content_layout.setSpacing(5)
+        content_layout.setSpacing(sx(5))
         left_col = QWidget()
         left_layout = QVBoxLayout(left_col)
         left_layout.setContentsMargins(0, 0, 0, 0)
-        left_layout.setSpacing(5)
+        left_layout.setSpacing(sx(5))
         self.status_panel = HUDPanel("СОСТОЯНИЕ СТАНЦИИ")
         self.comm_panel = HUDPanel("СВЯЗЬ")
         self.rover_panel = HUDPanel("МАРСОХОД")
@@ -380,7 +386,7 @@ class Mars1App(QMainWindow):
 
     def create_header(self):
         self.header = HUDPanel()
-        self.header.setFixedHeight(46)
+        self.header.setFixedHeight(sx(46))
         self.header.title_label.hide()
         self.header.layout.setContentsMargins(0, 0, 0, 0)
         self.header.layout.setSpacing(0)
@@ -388,8 +394,8 @@ class Mars1App(QMainWindow):
             item = self.header.layout.takeAt(0)
             if item.widget(): item.widget().setParent(None)
         h_layout = QHBoxLayout()
-        h_layout.setContentsMargins(12, 4, 12, 4)
-        h_layout.setSpacing(14)
+        h_layout.setContentsMargins(sx(12), sx(4), sx(12), sx(4))
+        h_layout.setSpacing(sx(14))
         title = QLabel("СТАНЦИЯ МАРС-1 | СЕКТОР ОЛИМП")
         title.setObjectName("mainTitle")
         title.setAlignment(Qt.AlignVCenter | Qt.AlignLeft)
@@ -454,13 +460,13 @@ class Mars1App(QMainWindow):
         self.setStyleSheet(f"""
             QMainWindow {{ background-color: {APP_BG}; }}
             QWidget {{ background-color: transparent; color: {CYAN}; font-family: "DPix_8pt", monospace; }}
-            #hudPanel {{ background-color: {PANEL_BG}; border: 1px solid rgba(143,255,255,70); border-radius: 8px; }}
-            #panelTitle {{ color: {CYAN}; font-size: 13px; font-weight: bold; letter-spacing: 0.5px; }}
-            #mainTitle {{ color: {CYAN}; font-size: 16px; font-weight: bold; letter-spacing: 1px; }}
-            #timeLabel {{ color: {GREEN}; font-size: 15px; font-weight: bold; padding: 0 4px; }}
-            #fullscreenBtn {{ color: {CYAN}; font-size: 18px; background: transparent; border: none; padding: 0; margin: 0; line-height: 1; }}
+            #hudPanel {{ background-color: {PANEL_BG}; border: 1pt solid rgba(143,255,255,70); border-radius: 8pt; }}
+            #panelTitle {{ color: {CYAN}; font-size: {sx(13)}pt; font-weight: bold; letter-spacing: 0.5pt; }}
+            #mainTitle {{ color: {CYAN}; font-size: {sx(16)}pt; font-weight: bold; letter-spacing: 1pt; }}
+            #timeLabel {{ color: {GREEN}; font-size: {sx(15)}pt; font-weight: bold; padding: 0 {sx(4)}pt; }}
+            #fullscreenBtn {{ color: {CYAN}; font-size: {sx(18)}pt; background: transparent; border: none; padding: 0; margin: 0; line-height: 1; }}
             #fullscreenBtn:hover {{ color: {GREEN}; }}
-            #closeBtn {{ color: {CYAN}; font-size: 16px; background: transparent; border: none; padding: 0; margin: 0; line-height: 1; }}
+            #closeBtn {{ color: {CYAN}; font-size: {sx(16)}pt; background: transparent; border: none; padding: 0; margin: 0; line-height: 1; }}
             #closeBtn:hover {{ color: #FF3355; }}
         """)
 
@@ -469,18 +475,18 @@ class Mars1App(QMainWindow):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
         painter.fillRect(self.rect(), QColor(APP_BG))
-        pen_border = QPen(QColor(CYAN), 2)
+        pen_border = QPen(QColor(CYAN), sx(2))
         painter.setPen(pen_border)
         painter.drawRect(QRectF(1, 1, self.width() - 2, self.height() - 2))
         pen_grid = QPen(QColor(0x8F, 0xFF, 0xFF, 50))
-        pen_grid.setWidth(1)
+        pen_grid.setWidth(sx(1))
         painter.setPen(pen_grid)
-        spacing = 20
+        spacing = sx(20)
         for x in range(0, self.width(), spacing): painter.drawLine(x, 0, x, self.height()) 
         for y in range(0, self.height(), spacing): painter.drawLine(0, y, self.width(), y)
         scan_pen = QPen(QColor(0, 0, 0, 25))
         painter.setPen(scan_pen)
-        for y in range(0, self.height(), 4): painter.drawLine(0, y, self.width(), y)
+        for y in range(0, self.height(), sx(4)): painter.drawLine(0, y, self.width(), y)
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
