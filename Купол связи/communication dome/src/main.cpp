@@ -40,7 +40,11 @@ void setup() {
   oled.println("к отправке");
   oled.println("  Данных");
   delay(1000);
+  // oled.clear();       // Очистка экрана
+  // oled.setScale(SCALE);   // Масштаб текста (1..4)
+  // oled.home();
   // attachInterrupt(0, irIsr, FALLING); // Привязываем прерывание к функции irIsr на спад сигнала
+
 }
 
 void loop() {
@@ -49,9 +53,9 @@ void loop() {
 
   static uint32_t last_send_time = 0; // Время последней отправки данных
   static uint8_t counter_0xff = 0; // Счетчик для отправки 0xFF после каждого сообщения
+  // counter_0xff
 
-
-  if (millis() - last_send_time > 1000) { // Проверяем, прошло ли 1 секунда с последней отправки
+  if (millis() - last_send_time > 3000) { // Проверяем, прошло ли 1 секунда с последней отправки
     
     // Очищаем буфер
     buffer_index = 0;
@@ -62,8 +66,8 @@ void loop() {
 
   if (Serial.available() > 0) {
     
-    char incoming_char = Serial.read(); // Читаем входящий символ
-
+    uint8_t incoming_char = Serial.read(); // Читаем входящий символ
+    
     // Проверяем, есть ли место в буфере
     if (buffer_index < SIZE_BUFFER - 1)
       input_buffer[buffer_index++] = incoming_char;  // Добавляем символ
@@ -82,13 +86,14 @@ void loop() {
     // Если получен символ 0xFF, увеличиваем счетчик и проверяем, нужно ли отправлять данные
     if (incoming_char == 0xff) {
       counter_0xff++;
+      // Serial.print(counter_0xff);
       if(counter_0xff >= 3) {
         counter_0xff = 0; // Сброс счетчика
 
         // Отправляем данные по ИК
         for (int i = 0; i < buffer_index; i++) {
           ir.send(DOM_ADDRESS, input_buffer[i]);
-          Serial.print(input_buffer[i]);
+          // Serial.print(input_buffer[i]);
           delay(PAUSE);
         }
 

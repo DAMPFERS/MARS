@@ -386,7 +386,7 @@ if __name__ == "__main__":
 
     print("Ожидание определения устройств...")
 
-    # Даем время на автоопределение
+    # Даем время на автоопределение#########
     time.sleep(5)
 
     while True:
@@ -400,7 +400,7 @@ if __name__ == "__main__":
             manager.sendSolarAngles(45, 90)
         else:
             print("Solar device not found")
-        # ========= NEXTION =========
+        # ========= NEXTION =========ы
 
         nextion = manager.getNextion()
         if nextion:
@@ -412,12 +412,13 @@ if __name__ == "__main__":
         else:
             print("Nextion not found")
 
-        # ========= TRANSMITTER =========
+        # ========= TRANSMITTER =========   
 
         transmitter = manager.getTransmitter()
+        
         if transmitter:
             transmitter.send(
-                b'\xFE\x01\x02\x03\xFF\xFF\xFF'
+                b'\xFE\x60\x60\xFF\xFF\xFF'
             )
         else:
             print("Transmitter not found")

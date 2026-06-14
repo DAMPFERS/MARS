@@ -120,13 +120,16 @@ def _sendWeatherTask(sun_val: int, wind_val: int) -> None:
 
 def main() -> None:
     
+    global _is_weather_busy
+    
     app = QApplication(sys.argv)
     
     # 1. Инициализация GUI
     # Получаем текущий DPI экрана
-    screen = QApplication.primaryScreen()
-    dpi = screen.physicalDotsPerInch()
-    scale_factor = dpi / 96.0  # 96 DPI — стандартное значение
+    # screen = QApplication.primaryScreen()
+    # dpi = screen.physicalDotsPerInch()
+    # scale_factor = dpi / 96.0  # 96 DPI — стандартное значение
+    scale_factor = 1.0  # Отключаем масштабирование для тестов
     
     font_id = QFontDatabase.addApplicationFont(FONT_PATH)
     if font_id != -1:  # Если шрифт загрузился успешно
@@ -165,6 +168,32 @@ def main() -> None:
     window.set_active_point(current_idx)
     window.update_plots()
     server.setGameTick(current_idx)
+    
+    
+    # Установка начальной погоды
+    if (window.data is not None) and (not _is_weather_busy):       
+            try:
+                sun_val = int(window.data["Солнце"][current_idx])
+                wind_val = int(window.data["Ветер"][current_idx])
+                # .iloc гарантирует скаляр, а не Series
+                
+                
+                
+                with _weather_lock:
+                    print("0_o")
+                    if not _is_weather_busy:     # Двойная проверка (race-condition защита)
+                        _is_weather_busy = True  # Блокируем отправку, пока не завершится текущая
+                    threading.Thread(
+                        target=_sendWeatherTask, 
+                        args=(sun_val, wind_val), 
+                        daemon=True
+                    ).start()
+                
+            except ValueError as ve:
+                print(f"[Timer] Ошибка преобразования данных погоды: {ve}")
+            except Exception as e:
+                print(f"[Timer] Ошибка при запуске задачи погоды: {e}")
+    
     
     def onTimerTick():
         
@@ -252,12 +281,19 @@ def main() -> None:
                 
         # Безопасная отправка погоды (ТОЛЬКО если предыдущая закончилась)
         if (window.data is not None) and (not _is_weather_busy):
+            # print(window.data)
+            # print(f"sun: {sun_val}")
+            # print(f"wind: {wind_val}")
+            
             try:
+                sun_val = int(window.data["Солнце"][current_idx])
+                wind_val = int(window.data["Ветер"][current_idx])
                 # .iloc гарантирует скаляр, а не Series
-                sun_val = int(window.data.iloc[current_idx][1])
-                wind_val = int(window.data.iloc[current_idx][2])
+                
+                
                 
                 with _weather_lock:
+                    print("0_o")
                     if not _is_weather_busy:     # Двойная проверка (race-condition защита)
                         _is_weather_busy = True  # Блокируем отправку, пока не завершится текущая
                     threading.Thread(

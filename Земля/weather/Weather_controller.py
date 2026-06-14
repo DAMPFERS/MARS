@@ -301,6 +301,10 @@ def set_all_weather(sun_val: int, wind_val: int) -> bool:
 # ───────────────────────────────────────────────────────────────
 def main() -> None:
     
+    set_all_weather(0,0)
+    exit()
+    
+    
     import time 
     i = 0
     server = TCPReceiver()

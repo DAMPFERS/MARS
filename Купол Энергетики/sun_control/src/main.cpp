@@ -4,8 +4,12 @@
 #include <Servo.h>  // Подключаем библиотеку Servo
 
 
+Servo myservo;  // создаем объект для управления сервоприводом
+
+
+
 #define SERVO_MIN_ANGLE 0
-#define SERVO_MAX_ANGLE 360
+#define SERVO_MAX_ANGLE 270
 #define SERVO_PIN_1 9
 #define SERVO_PIN_2 10
 
@@ -19,6 +23,9 @@ void setup() {
   // Подключаем сервомоторы к пинам
   servo1.attach(SERVO_PIN_1);  // Серво 1 на пине 9
   servo2.attach(SERVO_PIN_2); // Серво 2 на пине 10
+
+  servo1.write(0);
+  servo2.write(0);
 
   // Открываем Serial Port
   Serial.begin(9600);
@@ -63,7 +70,7 @@ void loop() {
     uint8_t byte1 = Serial.read();
     uint8_t byte2 = Serial.read();
 
-    // Преобразуем байты в углы (0-255 -> 0-360)
+    // Преобразуем байты в углы (0-255 -> 0-270)
     uint16_t angle1 = map(byte1, 0, 255, SERVO_MIN_ANGLE, SERVO_MAX_ANGLE);
     uint16_t angle2 = map(byte2, 0, 255, SERVO_MIN_ANGLE, SERVO_MAX_ANGLE);
 
@@ -100,8 +107,7 @@ void loop() {
       }
     }
 
-    
-    // servo2.write(angle2);
+
 
 
     old_angle_1 = angle1;
