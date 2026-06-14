@@ -44,6 +44,25 @@ import numpy as np
 import time
 import threading
 
+
+LEDS_COUNT = 160
+
+DOM_MAIN_INDEX_SECTION = 0
+DOM_LIVE_INDEX_SECTION = 1
+DOM_TRANSIVER_INDEX_SECTION = 2
+DOM_ENERGY_INDEX_SECTION = 3
+
+
+DOM_MAIN = {"start": 0, "end": 33, "color": (0,0,0), "brightness":255}
+DOM_LIVE = {"start": 34, "end": 52, "color": (0,0,0), "brightness":255}
+DOM_TRANSIVER = {"start": 53, "end": 71, "color": (0,0,0), "brightness":255}
+
+DOM_ENERGY = {"start": 72, "end": 109, "color": (0,0,0), "brightness":255}
+
+SECTIONS = [DOM_MAIN, DOM_LIVE, DOM_TRANSIVER, DOM_ENERGY]
+
+
+
 try:
     from rpi_ws281x import PixelStrip, Color
     IS_RASPBERRY_PI = True
@@ -86,7 +105,10 @@ class LEDStrip:
             sections (list): Список секций. Если None, создаётся стандартное разбиение на 4 секции.
             global_brightness (int): Глобальная яркость (0-255).
         """
-        self.num_leds = num_leds
+        
+        
+        
+        self.num_leds = num_leds 
         self.pin = pin
         self.led_type  = led_type.upper()
         self.global_brightness = global_brightness
@@ -109,8 +131,13 @@ class LEDStrip:
                              {"start": 2 * section_size, "end": 3 * section_size - 1, "color": (0,0,0), "brightness":255},
                              {"start": 3 * section_size, "end": num_leds - 1, "color": (0,0,0), "brightness":255}
                              ]
+                             
         else:
             self.sections = sections
+        self.dom_main_indexs = self.sections[DOM_MAIN_INDEX_SECTION]
+        self.dom_live_indexs = self.sections[DOM_LIVE_INDEX_SECTION]
+        self.dom_transiver_indexs = self.sections[DOM_TRANSIVER_INDEX_SECTION]
+        self.dom_energy_indexs = self.sections[DOM_ENERGY_INDEX_SECTION]
         
         # Начальная установка  
         self.strip.begin()
@@ -201,16 +228,21 @@ class LEDStrip:
 
 
 if __name__ == "__main__":
+    #global DOM_MAIN_INDEX_SECTION
+    #global DOM_LIVE_INDEX_SECTION
+    #global DOM_TRANSIVER_INDEX_SECTION
     # Создание ленты (RGB, 165 светодиодов, пин 18)
-    strip = LEDStrip(num_leds=165, pin=18, led_type="RGB")
+    strip = LEDStrip(num_leds=165, pin=18, led_type="RGB", sections = SECTIONS)
     
     # Установка цвета для секции 0 (красный)
-    strip.set_section_color(section_index=0, color=(255, 0, 0))
-    strip.set_section_color(section_index=1, color=(0, 255, 0))
-    strip.set_section_color(section_index=2, color=(0, 0, 255))
+    strip.set_section_color(section_index=DOM_MAIN_INDEX_SECTION, color=(255, 0, 0))
+    strip.set_section_color(section_index=DOM_LIVE_INDEX_SECTION, color=(0, 255, 0))
+    strip.set_section_color(section_index=DOM_TRANSIVER_INDEX_SECTION, color=(0, 0, 255))
+    
+    strip.set_section_color(section_index=DOM_ENERGY_INDEX_SECTION, color=(255, 0, 255))
     
     # Установка яркости для секции 0 (50%)
-    strip.set_section_brightness(section_index=0, brightness=128)
+    strip.set_section_brightness(section_index=0, brightness=255)
     
     # Применение изменений
     strip.show()
