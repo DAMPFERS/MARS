@@ -12,7 +12,8 @@ from typing import Optional, Dict, Any
 
 import csv
 
-
+IP_ADDRESS = "192.168.3.10"
+PORT = 5005
 
 
 class StationTCPClient:
@@ -458,7 +459,7 @@ if __name__ == "__main__":
     time.sleep(3)  # Симуляция времени обработки данных
     
     
-    directory = "D:/PROGRAMS/MARS/Купол Энергетики"  # Заменить на нужный путь
+    directory = ""  # Заменить на нужный путь
     
     index_file = openExcelFile(directory)
     if index_file is None:
@@ -472,7 +473,8 @@ if __name__ == "__main__":
                 print("Проверка корректности данных...")
                 flag_err = False
                 
-                path_name = directory + "/" + f"Сonsumption plan Data_frame_{index_file}.xlsx"
+                # path_name = directory + "/" + f"Сonsumption plan Data_frame_{index_file}.xlsx"
+                path_name = f"Сonsumption plan Data_frame_{index_file}.xlsx"
                 sun = readExcelByColumn(path_name, "Погода", "Солнце")
                 
                 # print(type(sun))
@@ -588,7 +590,7 @@ if __name__ == "__main__":
                 print("Загрузка плана...")
                 time.sleep(1)  # Симуляция времени загрузки
                 
-                client = StationTCPClient("127.0.0.1", port=5005)
+                client = StationTCPClient(IP_ADDRESS, port=PORT)
                 if client.connect():
                     success = client.send_excel_data(
                         station_id=station_name,
@@ -602,7 +604,7 @@ if __name__ == "__main__":
                     if success:
                         print("План успешно загружен!")
                         client.stop()
-                        exit()
+                        # exit()
                     else:
                         print("Ошибка при отправке данных на сервер.")
                         client.stop()

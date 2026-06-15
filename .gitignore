@@ -1,5 +1,6 @@
 
 *.pyc
+*.spec
 __pycache__/
 
 # Prerequisites
