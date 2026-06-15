@@ -301,7 +301,7 @@ def set_all_weather(sun_val: int, wind_val: int) -> bool:
 # ───────────────────────────────────────────────────────────────
 def main() -> None:
     
-    set_all_weather(0,0)
+    set_all_weather(50,50)
     exit()
     
     

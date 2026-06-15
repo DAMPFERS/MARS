@@ -26,7 +26,7 @@ from tcp_data import localTCP
 STATION_ADDRESS = "0x15"
 STATION_ID = 1
 
-IP_SERVER = "127.0.0.1"
+IP_SERVER = "192.168.3.10"
 PORT_SERVER = 5005
 
 FONTH_PATH = "GUI/assets/fonts/DPix_8pt.ttf"
@@ -137,6 +137,7 @@ def main() -> None:
     
     # 5. Запуск TCP соединения
     client = localTCP.StationTCPClient(IP_SERVER, PORT_SERVER)
+    client.start()  # Запуск в отдельном потоке
     print(f"[Main] Попытка запустить поток TCP соединения: {IP_SERVER}:{PORT_SERVER}")
     
     # 6. Таймер обновления GUI 
@@ -454,24 +455,28 @@ def main() -> None:
         
         
         
-        if tick_count % 5 == 1:  # отправка данных на сервер каждые 5 секунд      
+        if tick_count % 5 == 1:  # отправка данных на сервер каждые 5 секунд 
+            
             client.send_station_data(
                 station_id=STATION_ID,
                 station_name="Station Alpha",
-                consumption=forecast_data["Полное потребление"][tact_game],
-                generation=energy_data["full_generation"],
-                storage=energy_data["battery1_level"] + energy_data["battery2_level"] + energy_data["battery3_level"],
-                speed=connection_data["speed"],
-                latency=connection_data["latency"],
-                snr=connection_data["SNR"],
-                supply=material_data["supply"],
-                consumption_rate=material_data["consumption_rate"],
-                delivery_time=material_data["delivery"],
-                charge=rover_data["charge"],
-                distance=rover_data["distance"],
-                status=rover_data["status"], 
+                consumption=round(float(forecast_data["Полное потребление"][tact_game]), 1),
+                generation=round(float(energy_data["full_generation"]), 1),
+                storage=round(float(energy_data["battery1_level"] + energy_data["battery2_level"] + energy_data["battery3_level"]), 1),
+                speed=round(float(connection_data["speed"]), 1),
+                latency=round(float(connection_data["latency"]), 1),
+                snr=round(float(connection_data["SNR"]), 1),
+                supply=round(float(material_data["supply"]), 1),
+                consumption_rate=round(float(material_data["consumption_rate"]), 1),
+                delivery_time=round(float(material_data["delivery"]), 1),
+                charge=round(float(rover_data["charge"]), 1),
+                distance=round(float(rover_data["distance"]), 1),
+                status=rover_data["status"]
             )
-            pass
+            # time.sleep(5)
+            status = client.getStatus()
+            print(f"Текущий такт: {status['game_tick']}, Режим: {status['operation_mode']}")
+            
         
         if tick_count % 10 == 1: # отправка данных в купол связи каждые 10 секунд
             # 1. Отправка в купол связи (Transmitter)

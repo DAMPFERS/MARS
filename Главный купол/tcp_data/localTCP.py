@@ -342,29 +342,31 @@ class StationTCPClient:
 if __name__ == "__main__":
     import time
     # Создание клиента
-    client = StationTCPClient("127.0.0.1", 5005)
+    client = StationTCPClient("192.168.3.10", 5005)
 
     # Запуск фонового потока
     client.start()
+    
+    for i in range(10):
 
-    # Отправка данных (не блокирует GUI)
-    client.send_station_data(
-        station_id=1,
-        station_name="Station Alpha",
-        consumption=10.5,
-        generation=15.0,
-        storage=50.0,
-        speed=100,
-        latency=50,
-        snr=25.5,
-        supply=1000,
-        consumption_rate=10.0,
-        delivery_time=2,
-        charge=80,
-        distance=150.5,
-        status="active"
-    )
-    time.sleep(5)  # Ждем немного, чтобы данные были отправлены и ответ получен
+        # Отправка данных (не блокирует GUI)
+        client.send_station_data(
+            station_id=1,
+            station_name="Station Alpha",
+            consumption=10.5,
+            generation=15.0,
+            storage=50.0,
+            speed=100,
+            latency=50,
+            snr=25.5,
+            supply=1000,
+            consumption_rate=10.0,
+            delivery_time=2,
+            charge=80,
+            distance=150.5,
+            status="active"
+        )
+        time.sleep(5)  # Ждем немного, чтобы данные были отправлены и ответ получен
     # Получение текущего состояния
     status = client.getStatus()
     print(f"Текущий такт: {status['game_tick']}, Режим: {status['operation_mode']}")
