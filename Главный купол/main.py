@@ -522,6 +522,7 @@ def main() -> None:
     app.aboutToQuit.connect(cleanup)
     
     window.show()
+    window.showFullScreen() 
     sys.exit(app.exec_())    
     
     
