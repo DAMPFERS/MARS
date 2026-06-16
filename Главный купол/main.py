@@ -335,14 +335,14 @@ def main() -> None:
         if delta >= 0:
             # Энергии достаточно: Зелено-голубой спектр с небольшим шумом
             # R: почти 0, G: высокий (180-255), B: высокий (150-255)
-            r = random.randint(0, 40)
-            g = random.randint(180, 255)
-            b = random.randint(150, 255)
+            r = 0
+            g = 255
+            b = 0
             target_color = (r, g, b)
         else:
             # Энергии не хватает: Красный спектр (можно добавить легкое мерцание через шум в G)
             r = 255
-            g = random.randint(0, 60)
+            g = 0
             b = 0
             target_color = (r, g, b)
 
