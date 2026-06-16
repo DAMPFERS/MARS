@@ -214,7 +214,7 @@ class LEDStrip:
                     r = int(r * brightness / 255)
                     g = int(g * brightness / 255)
                     b = int(b * brightness / 255)
-                    self.strip.setPixelColor(i, Color(r, g, b))
+                    self.strip.setPixelColor(i, Color(g, b, r))
         
         self.strip.show()
         
@@ -235,7 +235,7 @@ if __name__ == "__main__":
     strip = LEDStrip(num_leds=165, pin=18, led_type="RGB", sections = SECTIONS)
     
     # Установка цвета для секции 0 (красный)
-    strip.set_section_color(section_index=DOM_MAIN_INDEX_SECTION, color=(255, 0, 0))
+    strip.set_section_color(section_index=DOM_MAIN_INDEX_SECTION, color=(255, 255, 0))
     strip.set_section_color(section_index=DOM_LIVE_INDEX_SECTION, color=(0, 255, 0))
     strip.set_section_color(section_index=DOM_TRANSIVER_INDEX_SECTION, color=(0, 0, 255))
     

@@ -194,8 +194,8 @@ def main() -> None:
             panel1_state = settings.get("Panel 1", 0)
             panel2_state = settings.get("Panel 2", 0)
             
-            angle1 = 250 if panel1_state == 1 else 10
-            angle2 = 250 if panel2_state == 1 else 10
+            angle1 = 270 if panel1_state == 1 else 0
+            angle2 = 270 if panel2_state == 1 else 0
             serial_manager.sendSolarAngles(angle1, angle2)
             
             # 2. Управление подсветкой модулей
@@ -389,7 +389,7 @@ def main() -> None:
                     if delta <= 0:
                         break
         if forecast_data["Состояние панелей"][tact_game] != old_state_panels:
-            serial_manager.sendSolarAngles(250, 250) if forecast_data["Состояние панелей"][tact_game] == 1 else serial_manager.sendSolarAngles(10, 10) # Угол 250 - панели раскрыты, угол 10 - панели сложены
+            serial_manager.sendSolarAngles(270, 270) if forecast_data["Состояние панелей"][tact_game] == 1 else serial_manager.sendSolarAngles(0, 0) # Угол 270 - панели раскрыты, угол 0 - панели сложены
             old_state_panels = forecast_data["Состояние панелей"][tact_game]
         
         
@@ -487,7 +487,7 @@ def main() -> None:
             cons_byte = int(forecast_data["Полное потребление"][tact_game] * 255 / max_cons).to_bytes(1, byteorder='big', signed=False)
             
             # Отправляем (DeviceManager сам добавит \xFE в начало и \xFF\xFF\xFF в конец)
-            serial_manager.sendToDeviceCommunication(gen_byte + cons_byte)
+            serial_manager.sendToDeviceCommunication("MARS Mission complite\n", data_type="STR")
 
             # 2. Отправка углов в Solar (если нужно управлять панелями)
             # serial_manager.sendSolarAngles(45, 90)
