@@ -104,7 +104,7 @@ def main() -> None:
     
     if not WEATHER_CSV.exists():
         print(f"Ошибка: [Main] forecast.csv не найден {WEATHER_CSV}")
-        return
+        sys.exit(1)
     else:
         df = pd.read_csv(WEATHER_CSV)  # Загрузка данных из CSV в DataFrame
         
@@ -525,13 +525,6 @@ def main() -> None:
     window.showFullScreen() 
     sys.exit(app.exec_())    
     
-    
-    
 
-
-
-
-if __name__ == "__main__":
-    
-
+if __name__ == "__main__":  
     main()
