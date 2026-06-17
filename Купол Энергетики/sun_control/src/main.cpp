@@ -81,37 +81,37 @@ void loop() {
 
     // Устанавливаем углы для сервомоторов
 
-    if(old_angle_1 < angle1) {
-      for(uint16_t i = old_angle_1; i <= angle1; i++){
-        servo1.write(i);
-        delay(2);
-      }
-    }
-    else {
-      for(uint16_t i = old_angle_1; i >= angle1; i--){
-        servo1.write(i);
-        delay(2);
-      }
-    }
+    // if(old_angle_1 < angle1) {
+    //   for(uint16_t i = old_angle_1; i <= angle1; i++){
+    //     servo1.write(i);
+    //     delay(2);
+    //   }
+    // }
+    // else {
+    //   for(uint16_t i = old_angle_1; i >= angle1; i--){
+    //     servo1.write(i);
+    //     delay(2);
+    //   }
+    // }
 
-    if(old_angle_2 < angle2) {
-      for(uint16_t i = old_angle_2; i <= angle2; i++){
-        servo2.write(i);
-        delay(2);
-      }
-    }
-    else {
-      for(uint16_t i = old_angle_2; i >= angle2; i--){
-        servo2.write(i);
-        delay(2);
-      }
-    }
+    // if(old_angle_2 < angle2) {
+    //   for(uint16_t i = old_angle_2; i <= angle2; i++){
+    //     servo2.write(i);
+    //     delay(2);
+    //   }
+    // }
+    // else {
+    //   for(uint16_t i = old_angle_2; i >= angle2; i--){
+    //     servo2.write(i);
+    //     delay(2);
+    //   }
+    // }
 
+    servo1.write(angle1);
+    servo2.write(angle2);
 
-
-
-    old_angle_1 = angle1;
-    old_angle_2 = angle2;
+    // old_angle_1 = angle1;
+    // old_angle_2 = angle2;
 
     // Ждём, пока сервомоторы выполнят команду (опционально)
     delay(15);  // Минимальная задержка для стабильности
