@@ -335,16 +335,38 @@ def main() -> None:
         if delta >= 0:
             # Энергии достаточно: Зелено-голубой спектр с небольшим шумом
             # R: почти 0, G: высокий (180-255), B: высокий (150-255)
-            r = 0
-            g = 255
-            b = 0
+            for i in range(3):
+                if energy_data[f"battery{i+1}_level"] < energy_data["max_battery_level"]:
+                    old_level = energy_data[f"battery{i+1}_level"]
+                    energy_data[f"battery{i+1}_level"] = min(energy_data[f"battery{i+1}_level"] + delta, energy_data["max_battery_level"])
+                    delta -= (energy_data[f"battery{i+1}_level"] - old_level)  # Уменьшаем delta на то, что добавили в батарею
+                    if delta <= 0:
+                        break
+            
+            r = random.randint(0, 40)
+            g = random.randint(180, 255)
+            b = random.randint(0, 40)
             target_color = (r, g, b)
-        else:
+        else:               # не хватает энергии, нужно разрядить батареи
+            delta = -delta  # Теперь delta - это сколько энергии нам не хватает
+            for i in range(3):
+                if energy_data[f"battery{i+1}_level"] > 0:
+                    old_level = energy_data[f"battery{i+1}_level"]
+                    energy_data[f"battery{i+1}_level"] = max(energy_data[f"battery{i+1}_level"] - delta, 0)
+                    delta -= (old_level - energy_data[f"battery{i+1}_level"])  # Уменьшаем delta на то, что отняли из батареи
+                    if delta <= 0:
+                        break
             # Энергии не хватает: Красный спектр (можно добавить легкое мерцание через шум в G)
-            r = 255
-            g = 0
-            b = 0
-            target_color = (r, g, b)
+            if delta < 0:
+                r = 255
+                g = random.randint(0, 40)
+                b = 0
+                target_color = (r, g, b)
+            else:
+                r = random.randint(200, 255)
+                g = random.randint(200, 255)
+                b = 0
+                target_color = (r, g, b)
 
         # 3. Сопоставляем модули с секциями ленты и обновляем их
         modules_mapping = [
@@ -371,23 +393,23 @@ def main() -> None:
             
         
         
-        if delta >= 0: # достаточно энергии для покрытия потребления
-            for i in range(3):
-                if energy_data[f"battery{i+1}_level"] < energy_data["max_battery_level"]:
-                    old_level = energy_data[f"battery{i+1}_level"]
-                    energy_data[f"battery{i+1}_level"] = min(energy_data[f"battery{i+1}_level"] + delta, energy_data["max_battery_level"])
-                    delta -= (energy_data[f"battery{i+1}_level"] - old_level)  # Уменьшаем delta на то, что добавили в батарею
-                    if delta <= 0:
-                        break
-        else: # не хватает энергии, нужно разрядить батареи
-            delta = -delta  # Теперь delta - это сколько энергии нам не хватает
-            for i in range(3):
-                if energy_data[f"battery{i+1}_level"] > 0:
-                    old_level = energy_data[f"battery{i+1}_level"]
-                    energy_data[f"battery{i+1}_level"] = max(energy_data[f"battery{i+1}_level"] - delta, 0)
-                    delta -= (old_level - energy_data[f"battery{i+1}_level"])  # Уменьшаем delta на то, что отняли из батареи
-                    if delta <= 0:
-                        break
+        # if delta >= 0: # достаточно энергии для покрытия потребления
+        #     for i in range(3):
+        #         if energy_data[f"battery{i+1}_level"] < energy_data["max_battery_level"]:
+        #             old_level = energy_data[f"battery{i+1}_level"]
+        #             energy_data[f"battery{i+1}_level"] = min(energy_data[f"battery{i+1}_level"] + delta, energy_data["max_battery_level"])
+        #             delta -= (energy_data[f"battery{i+1}_level"] - old_level)  # Уменьшаем delta на то, что добавили в батарею
+        #             if delta <= 0:
+        #                 break
+        # else: 
+            # delta = -delta  # Теперь delta - это сколько энергии нам не хватает
+            # for i in range(3):
+            #     if energy_data[f"battery{i+1}_level"] > 0:
+            #         old_level = energy_data[f"battery{i+1}_level"]
+            #         energy_data[f"battery{i+1}_level"] = max(energy_data[f"battery{i+1}_level"] - delta, 0)
+            #         delta -= (old_level - energy_data[f"battery{i+1}_level"])  # Уменьшаем delta на то, что отняли из батареи
+            #         if delta <= 0:
+            #             break
         if forecast_data["Состояние панелей"][tact_game] != old_state_panels:
             serial_manager.sendSolarAngles(270, 270) if forecast_data["Состояние панелей"][tact_game] == 1 else serial_manager.sendSolarAngles(0, 0) # Угол 270 - панели раскрыты, угол 0 - панели сложены
             old_state_panels = forecast_data["Состояние панелей"][tact_game]
@@ -399,9 +421,14 @@ def main() -> None:
         # Энергетика (реальные данные)
         current_consumption = forecast_data["Полное потребление"][tact_game]
         telemetry["total_gen"] = f"{energy_data['full_generation']:.2f} МВт"
-        for i, val in enumerate(energy_data["generation"]):
-            telemetry[f"Блок А_{i}"] = f"{val:.2f}"
-            telemetry[f"Блок Б_{i}"] = f"{val:.2f}"
+        # for i, val in enumerate(energy_data["generation"]):
+        #     telemetry[f"Блок А_{i}"] = f"{val:.2f}"
+        #     telemetry[f"Блок Б_{i}"] = f"{val:.2f}"
+        for i in range(3):
+            telemetry[f"Блок А_{i*2}"] = f"{(energy_data["generation"][i] / 2):.2f}"
+            telemetry[f"Блок А_{i*2+1}"] = f"{(energy_data["generation"][i] / 2):.2f}"
+            telemetry[f"Блок Б_{i*2}"] = f"{(energy_data["generation"][i+3] / 2):.2f}"
+            telemetry[f"Блок Б_{i*2+1}"] = f"{(energy_data["generation"][i+3] / 2):.2f}"    
         telemetry["total_cons"] = f"{current_consumption:.2f} МВт"
         cons_map = ["Главный модуль", "Модуль связи", "Жилой модуль", "Модуль энергетики"]
         for i, mod in enumerate(cons_map):
@@ -417,18 +444,18 @@ def main() -> None:
         telemetry["total_acc"] = f"{sum(energy_data[f'battery{i+1}_level'] for i in range(3)):.1f} МВт·ч"
         
         # Случайные флуктуации (эмуляция датчиков)
-        telemetry["Давление"] = f"{6.2 + np.random.uniform(-0.1, 0.1):.2f}"
-        telemetry["Кислород"] = f"{21.0 + np.random.uniform(-0.5, 0.5):.1f}"
-        telemetry["Углекислый газ"] = f"{420 + np.random.randint(-15, 15)}"
-        telemetry["Герметичность"] = f"{99.8 + np.random.uniform(-0.2, 0.2):.1f}"
-        telemetry["Температура"] = f"{22.5 + np.random.uniform(-1, 1):.1f}"
+        telemetry["Давление"] = (f"{abs(6.2 + np.random.uniform(-0.1, 0.1)):.2f}")
+        telemetry["Кислород"] = f"{abs(21.0 + np.random.uniform(-0.5, 0.5)):.1f}"
+        telemetry["Углекислый газ"] = f"{abs(420 + np.random.randint(-15, 15))}"
+        telemetry["Герметичность"] = f"{abs(99.8 + np.random.uniform(-0.2, 0.2)):.1f}"
+        telemetry["Температура"] = f"{abs(22.5 + np.random.uniform(-1, 1)):.1f}"
         
-        telemetry["Мощность лазера"] = f"{12.4 + np.random.uniform(-0.5, 0.5):.1f}"
-        telemetry["Длина волны"] = f"{1550 + np.random.randint(-5, 5)}"
-        connection_data['speed'] = connection_data['speed'] + np.random.randint(-20, 20)
+        telemetry["Мощность лазера"] = f"{abs(12.4 + np.random.uniform(-0.5, 0.5)):.1f}"
+        telemetry["Длина волны"] = f"{abs(1550 + np.random.randint(-5, 5))}"
+        connection_data['speed'] = abs(connection_data['speed'] + np.random.randint(-20, 20))
         telemetry["Скорость канала"] = f"{connection_data['speed']}"
-        telemetry["Буфер передачи"] = f"{68 + np.random.randint(-10, 10)}"
-        connection_data['SNR'] = connection_data['SNR'] + np.random.uniform(-1.5, 1.5)
+        telemetry["Буфер передачи"] = f"{abs(68 + np.random.randint(-10, 10))}"
+        connection_data['SNR'] = abs(connection_data['SNR'] + np.random.uniform(-1.5, 1.5))
         telemetry["Сигнал/Шум"] = f"{connection_data['SNR']:.1f}"
         telemetry["Ошибки пакетов"] = str(np.random.randint(0, 5))
         h, m, s = tick_count // 3600, (tick_count % 3600) // 60, tick_count % 60
@@ -437,15 +464,15 @@ def main() -> None:
         telemetry["Статус линка_style"] = f"color: #00FF9D; font-size: {sx(12)}pt; font-weight: bold;"
         
         # h2 = 85.5 + np.random.uniform(-2, 2)
-        h2 = rover_data["charge"] + np.random.uniform(-2, 2)
+        h2 = abs(rover_data["charge"] + np.random.uniform(-2, 2))
         rover_data["charge"] = h2  # Обновляем заряд в данных ровера
         telemetry["Уровень H₂"] = f"{h2:.1f}"
         telemetry["Уровень H₂_style"] = f"color: {'#FF4D4D' if h2 < 20 else '#00FF9D'}; font-size: {sx(12)}pt; font-weight: bold;"
-        telemetry["Давление в системе"] = f"{35.0 + np.random.uniform(-0.5, 0.5):.1f}"
-        telemetry["Температура ячейки"] = f"{82 + np.random.uniform(-3, 3):.0f}"
-        telemetry["Выходная мощность"] = f"{12.4 + np.random.uniform(-0.8, 0.8):.1f}"
+        telemetry["Давление в системе"] = f"{abs(35.0 + np.random.uniform(-0.5, 0.5)):.1f}"
+        telemetry["Температура ячейки"] = f"{abs(82 + np.random.uniform(-3, 3)):.0f}"
+        telemetry["Выходная мощность"] = f"{abs(12.4 + np.random.uniform(-0.8, 0.8)):.1f}"
         rover_data["distance"] += np.random.uniform(0.5, 1.5)  # Увеличиваем дистанцию
-        telemetry["Запас хода"] = f"{rover_data["distance"]:.1f}"
+        telemetry["Запас хода"] = f"{abs(rover_data['distance']):.1f}"
         telemetry["Статус привода"] = rover_data["status"]
         telemetry["Статус привода_style"] = f"color: #00FF9D; font-size: {sx(12)}pt; font-weight: bold;"
 
@@ -463,14 +490,14 @@ def main() -> None:
                 consumption=round(float(forecast_data["Полное потребление"][tact_game]), 1),
                 generation=round(float(energy_data["full_generation"]), 1),
                 storage=round(float(energy_data["battery1_level"] + energy_data["battery2_level"] + energy_data["battery3_level"]), 1),
-                speed=round(float(connection_data["speed"]), 1),
-                latency=round(float(connection_data["latency"]), 1),
-                snr=round(float(connection_data["SNR"]), 1),
-                supply=round(float(material_data["supply"]), 1),
-                consumption_rate=round(float(material_data["consumption_rate"]), 1),
-                delivery_time=round(float(material_data["delivery"]), 1),
-                charge=round(float(rover_data["charge"]), 1),
-                distance=round(float(rover_data["distance"]), 1),
+                speed=round(abs(float(connection_data["speed"])), 1),
+                latency=round(abs(float(connection_data["latency"])), 1),
+                snr=round(abs(float(connection_data["SNR"])), 1),
+                supply=round(abs(float(material_data["supply"])), 1),
+                consumption_rate=round(abs(float(material_data["consumption_rate"])), 1),
+                delivery_time=round(abs(float(material_data["delivery"])), 1),
+                charge=round(abs(float(rover_data["charge"])), 1),
+                distance=round((abs(float(rover_data['distance']))), 1),
                 status=rover_data["status"]
             )
             # time.sleep(5)
