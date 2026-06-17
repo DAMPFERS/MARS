@@ -357,9 +357,9 @@ def main() -> None:
                     if delta <= 0:
                         break
             # Энергии не хватает: Красный спектр (можно добавить легкое мерцание через шум в G)
-            if delta < 0:
+            if delta > 0:
                 r = 255
-                g = random.randint(0, 40)
+                g = 0
                 b = 0
                 target_color = (r, g, b)
             else:
