@@ -151,8 +151,8 @@ class StationWidget(QWidget):
         # 3. МАТЕРИАЛЫ (нижний левый) - строка 1, столбец 0
         materials_widget = self._create_param_widget("МАТЕРИАЛЫ", [
             ("Семена", "0/5", "", 6),
-            ("Ca²⁺-активатор", "не готов", "", 7),
-            ("Катализа", "Не активна", "", 8)
+            ("Ca²⁺-активатор", "Не готов", "", 7),
+            ("Биоматериал", "Не готов", "", 8)
         ])
         main_layout.addWidget(materials_widget, 1, 0)
         
@@ -160,7 +160,7 @@ class StationWidget(QWidget):
         rover_widget = self._create_param_widget("РОВЕР", [
             ("Заряд", "0", "%", 9),
             ("Дистанция", "0", "км", 10),
-            ("Ресурсы", "0", "шт.", 11)
+            ("Ресурсы", "0", "шт", 11)
         ])
         main_layout.addWidget(rover_widget, 1, 1)
         

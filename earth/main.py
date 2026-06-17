@@ -206,31 +206,31 @@ def main() -> None:
     window.set_station_param(station_idx, 10, "0")  # Дистанция (км)
     window.set_station_param(station_idx, 11, "0")    # Ресурсы (шт.)
     # Материалы
-    window.set_station_param(station_idx, 6, "0/5")           # Семена
-    window.set_station_param(station_idx, 7, "не готов") # Активатор
-    window.set_station_param(station_idx, 8, "Не активна")    # Катализа
+    window.set_station_param(station_idx, 6, "5/5")           # Семена
+    window.set_station_param(station_idx, 7, "Готов") # Активатор
+    window.set_station_param(station_idx, 8, "Готов")    # Биоматериал
     
     #2я станция
     # Ровер
     station_idx = 1
-    window.set_station_param(station_idx, 9, "0")     # Заряд (%)
-    window.set_station_param(station_idx, 10, "0")  # Дистанция (км)
-    window.set_station_param(station_idx, 11, "0")    # Ресурсы (шт.)
+    window.set_station_param(station_idx, 9, "91")     # Заряд (%)
+    window.set_station_param(station_idx, 10, "81")  # Дистанция (км)
+    window.set_station_param(station_idx, 11, "27")    # Ресурсы (шт.)
     # Материалы
-    window.set_station_param(station_idx, 6, "0/5")           # Семена
-    window.set_station_param(station_idx, 7, "не готов") # Активатор
-    window.set_station_param(station_idx, 8, "Не активна")    # Катализа
+    window.set_station_param(station_idx, 6, "5/5")           # Семена
+    window.set_station_param(station_idx, 7, "Готов") # Активатор
+    window.set_station_param(station_idx, 8, "Готов")    # Биоматериал
     
     #3я станция
     # Ровер
     station_idx = 2
-    window.set_station_param(station_idx, 9, "0")     # Заряд (%)
-    window.set_station_param(station_idx, 10, "0")  # Дистанция (км)
-    window.set_station_param(station_idx, 11, "0")    # Ресурсы (шт.)
+    window.set_station_param(station_idx, 9, "95")     # Заряд (%)
+    window.set_station_param(station_idx, 10, "30")  # Дистанция (км)
+    window.set_station_param(station_idx, 11, "10")    # Ресурсы (шт.)
     # Материалы
     window.set_station_param(station_idx, 6, "0/5")           # Семена
-    window.set_station_param(station_idx, 7, "не готов") # Активатор
-    window.set_station_param(station_idx, 8, "Не активна")    # Катализа
+    window.set_station_param(station_idx, 7, "Не готов") # Активатор
+    window.set_station_param(station_idx, 8, "Не готов")    # Биоматериал
     
     #4я станция
     # Ровер
@@ -240,8 +240,8 @@ def main() -> None:
     window.set_station_param(station_idx, 11, "0")    # Ресурсы (шт.)
     # Материалы
     window.set_station_param(station_idx, 6, "0/5")           # Семена
-    window.set_station_param(station_idx, 7, "не готов") # Активатор
-    window.set_station_param(station_idx, 8, "Не активна")    # Катализа
+    window.set_station_param(station_idx, 7, "Не готов") # Активатор
+    window.set_station_param(station_idx, 8, "Не готов")    # Биоматериал
     
     ################################################################################
     
