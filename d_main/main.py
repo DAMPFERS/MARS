@@ -505,16 +505,17 @@ def main() -> None:
             print(f"Текущий такт: {status['game_tick']}, Режим: {status['operation_mode']}")
             
         
-        if tick_count % 10 == 1: # отправка данных в купол связи каждые 10 секунд
-            # 1. Отправка в купол связи (Transmitter)
-            gen_byte = int(energy_data["full_generation"] * 255 / (1024 * 4)).to_bytes(1, byteorder='big', signed=False)
+        serial_manager.sendToDeviceCommunication("MARS Mission complite\n", data_type="STR")
+        # if tick_count % 10 == 1: # отправка данных в купол связи каждые 10 секунд
+        #     # 1. Отправка в купол связи (Transmitter)
+        #     gen_byte = int(energy_data["full_generation"] * 255 / (1024 * 4)).to_bytes(1, byteorder='big', signed=False)
             
-            # Защита от деления на ноль, если потребление пока нулевое
-            max_cons = max(forecast_data["Полное потребление"]) if max(forecast_data["Полное потребление"]) > 0 else 1
-            cons_byte = int(forecast_data["Полное потребление"][tact_game] * 255 / max_cons).to_bytes(1, byteorder='big', signed=False)
+        #     # Защита от деления на ноль, если потребление пока нулевое
+        #     max_cons = max(forecast_data["Полное потребление"]) if max(forecast_data["Полное потребление"]) > 0 else 1
+        #     cons_byte = int(forecast_data["Полное потребление"][tact_game] * 255 / max_cons).to_bytes(1, byteorder='big', signed=False)
             
-            # Отправляем (DeviceManager сам добавит \xFE в начало и \xFF\xFF\xFF в конец)
-            serial_manager.sendToDeviceCommunication("MARS Mission complite\n", data_type="STR")
+        #     # Отправляем (DeviceManager сам добавит \xFE в начало и \xFF\xFF\xFF в конец)
+        #     serial_manager.sendToDeviceCommunication("MARS Mission complite\n", data_type="STR")
 
             # 2. Отправка углов в Solar (если нужно управлять панелями)
             # serial_manager.sendSolarAngles(45, 90)

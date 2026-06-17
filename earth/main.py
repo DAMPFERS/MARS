@@ -195,6 +195,57 @@ def main() -> None:
                 print(f"[Timer] Ошибка при запуске задачи погоды: {e}")
     
     
+    
+    #----------------------------------------------------------------------------###################################
+    #Установка статических значений для всех станций
+    
+    #1я станция
+    # Ровер
+    station_idx = 0
+    window.set_station_param(station_idx, 9, "0")     # Заряд (%)
+    window.set_station_param(station_idx, 10, "0")  # Дистанция (км)
+    window.set_station_param(station_idx, 11, "0")    # Ресурсы (шт.)
+    # Материалы
+    window.set_station_param(station_idx, 6, "0/5")           # Семена
+    window.set_station_param(station_idx, 7, "не готов") # Активатор
+    window.set_station_param(station_idx, 8, "Не активна")    # Катализа
+    
+    #2я станция
+    # Ровер
+    station_idx = 1
+    window.set_station_param(station_idx, 9, "0")     # Заряд (%)
+    window.set_station_param(station_idx, 10, "0")  # Дистанция (км)
+    window.set_station_param(station_idx, 11, "0")    # Ресурсы (шт.)
+    # Материалы
+    window.set_station_param(station_idx, 6, "0/5")           # Семена
+    window.set_station_param(station_idx, 7, "не готов") # Активатор
+    window.set_station_param(station_idx, 8, "Не активна")    # Катализа
+    
+    #3я станция
+    # Ровер
+    station_idx = 2
+    window.set_station_param(station_idx, 9, "0")     # Заряд (%)
+    window.set_station_param(station_idx, 10, "0")  # Дистанция (км)
+    window.set_station_param(station_idx, 11, "0")    # Ресурсы (шт.)
+    # Материалы
+    window.set_station_param(station_idx, 6, "0/5")           # Семена
+    window.set_station_param(station_idx, 7, "не готов") # Активатор
+    window.set_station_param(station_idx, 8, "Не активна")    # Катализа
+    
+    #4я станция
+    # Ровер
+    station_idx = 3
+    window.set_station_param(station_idx, 9, "0")     # Заряд (%)
+    window.set_station_param(station_idx, 10, "0")  # Дистанция (км)
+    window.set_station_param(station_idx, 11, "0")    # Ресурсы (шт.)
+    # Материалы
+    window.set_station_param(station_idx, 6, "0/5")           # Семена
+    window.set_station_param(station_idx, 7, "не готов") # Активатор
+    window.set_station_param(station_idx, 8, "Не активна")    # Катализа
+    
+    ################################################################################
+    
+    
     def onTimerTick():
         
         global _is_weather_busy
@@ -248,9 +299,9 @@ def main() -> None:
                 consumption_rate = materials.get("consumption_rate", 0)
                 delivery_time = materials.get("delivery_time", 0)
                 
-                window.set_station_param(station_idx, 6, str(supply))           # Запас (кг)
-                window.set_station_param(station_idx, 7, str(consumption_rate)) # Расход (кг/ч)
-                window.set_station_param(station_idx, 8, str(delivery_time))    # Доставка (дней)
+                # window.set_station_param(station_idx, 6, str(supply))           # Запас (кг)
+                # window.set_station_param(station_idx, 7, str(consumption_rate)) # Расход (кг/ч)
+                # window.set_station_param(station_idx, 8, str(delivery_time))    # Доставка (дней)
                 
                 # РОВЕР
                 rover = params.get("rover", {})
@@ -258,9 +309,9 @@ def main() -> None:
                 distance = rover.get("distance", 0)
                 status = rover.get("status", "Неизвестно")
                 
-                window.set_station_param(station_idx, 9, str(charge))     # Заряд (%)
-                window.set_station_param(station_idx, 10, str(distance))  # Дистанция (км)
-                window.set_station_param(station_idx, 11, str(status))    # Статус
+                # window.set_station_param(station_idx, 9, str(charge))     # Заряд (%)
+                # window.set_station_param(station_idx, 10, str(distance))  # Дистанция (км)
+                # window.set_station_param(station_idx, 11, str(status))    # Статус
                 
                 
                 
