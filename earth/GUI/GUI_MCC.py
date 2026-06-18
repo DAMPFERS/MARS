@@ -227,12 +227,19 @@ class StationWidget(QWidget):
         layout.addStretch()  # Растяжка внизу - прижимает все параметры к верху, чтобы не было пустоты снизу
         return widget
     
-    def set_param_value(self, param_id, value):
+    def set_param_value(self, param_id: int, value: str, color: str = None):
         """Устанавливает значение параметра по его ID"""
         key = (self.station_idx, param_id)
         if key in self.value_labels:
-            self.value_labels[key].setText(str(value))
-
+            lbl: QLabel = self.value_labels[key]
+            lbl.setText(str(value))
+            
+            if color:
+                # Применяем кастомный цвет
+                lbl.setStyleSheet(f"color: {color}; font-size: {sx(10)}pt; font-weight: bold;")
+            else:
+                # Возвращаем к зелёному по умолчанию
+                lbl.setStyleSheet(f"color: {GREEN}; font-size: {sx(10)}pt; font-weight: bold;")
 # 262-600: КЛАСС MAIN WINDOW - главное окно приложения
 class MarsForecastApp(QMainWindow):
     def __init__(self):
@@ -378,11 +385,11 @@ class MarsForecastApp(QMainWindow):
         panel.content_layout.addWidget(self.sun_plot, stretch=1)
         return panel
 
-    def set_station_param(self, station_idx, param_id, value):
+    def set_station_param(self, station_idx: int, param_id: int, value: str, color: str = None):
         if 0 <= station_idx < len(self.stations):
             station_widget = self.stations[station_idx].content_layout.itemAt(0).widget()
             if station_widget and isinstance(station_widget, StationWidget):
-                station_widget.set_param_value(param_id, value)
+                station_widget.set_param_value(param_id, value, color)
 
     def load_data(self, csv_path, col_y1_name, col_y2_name):
         self.data = pd.read_csv(csv_path)

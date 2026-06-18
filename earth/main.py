@@ -198,13 +198,14 @@ def main() -> None:
     
     #----------------------------------------------------------------------------###################################
     #Установка статических значений для всех станций
+    ERROR_COLOR = "#D71212"  # Красный цвет для ошибок
     
     #1я станция
     # Ровер
     station_idx = 0
-    window.set_station_param(station_idx, 9, "0")     # Заряд (%)
-    window.set_station_param(station_idx, 10, "0")  # Дистанция (км)
-    window.set_station_param(station_idx, 11, "0")    # Ресурсы (шт.)
+    window.set_station_param(station_idx, 9, "0", ERROR_COLOR)     # Заряд (%)
+    window.set_station_param(station_idx, 10, "0", ERROR_COLOR)  # Дистанция (км)
+    window.set_station_param(station_idx, 11, "0", ERROR_COLOR)    # Ресурсы (шт.)
     # Материалы
     window.set_station_param(station_idx, 6, "5/5")           # Семена
     window.set_station_param(station_idx, 7, "Готов") # Активатор
@@ -228,20 +229,20 @@ def main() -> None:
     window.set_station_param(station_idx, 10, "30")  # Дистанция (км)
     window.set_station_param(station_idx, 11, "10")    # Ресурсы (шт.)
     # Материалы
-    window.set_station_param(station_idx, 6, "0/5")           # Семена
-    window.set_station_param(station_idx, 7, "Не готов") # Активатор
-    window.set_station_param(station_idx, 8, "Не готов")    # Биоматериал
+    window.set_station_param(station_idx, 6, "0/5", ERROR_COLOR)           # Семена
+    window.set_station_param(station_idx, 7, "Не готов", ERROR_COLOR) # Активатор
+    window.set_station_param(station_idx, 8, "Не готов", ERROR_COLOR)    # Биоматериал
     
     #4я станция
     # Ровер
     station_idx = 3
-    window.set_station_param(station_idx, 9, "0")     # Заряд (%)
-    window.set_station_param(station_idx, 10, "0")  # Дистанция (км)
-    window.set_station_param(station_idx, 11, "0")    # Ресурсы (шт.)
+    window.set_station_param(station_idx, 9, "0", ERROR_COLOR)     # Заряд (%)
+    window.set_station_param(station_idx, 10, "0", ERROR_COLOR)  # Дистанция (км)
+    window.set_station_param(station_idx, 11, "0", ERROR_COLOR)    # Ресурсы (шт.)
     # Материалы
-    window.set_station_param(station_idx, 6, "0/5")           # Семена
-    window.set_station_param(station_idx, 7, "Не готов") # Активатор
-    window.set_station_param(station_idx, 8, "Не готов")    # Биоматериал
+    window.set_station_param(station_idx, 6, "0/5", ERROR_COLOR)           # Семена
+    window.set_station_param(station_idx, 7, "Не готов", ERROR_COLOR) # Активатор
+    window.set_station_param(station_idx, 8, "Не готов", ERROR_COLOR)    # Биоматериал
     
     ################################################################################
     
