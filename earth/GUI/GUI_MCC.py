@@ -126,43 +126,80 @@ class StationWidget(QWidget):
         super().__init__()
         self.station_idx = station_idx
         self.value_labels = {}  # Словарь для хранения ссылок на лейблы значений (ключ: (станция, id_параметра))
+        self.block_frames = {}      #  храним ссылки на 4 рамки
+        self.block_effects = {}     #  храним эффекты свечения
         
         # Основной layout - сетка 2x2 (два столбца, две строки)
         main_layout = QGridLayout(self)
         main_layout.setContentsMargins(0, 0, 0, 0)  # Отступы от краёв виджета до сетки (0px)
         main_layout.setSpacing(5)  # Расстояние между 4 квадратами (5px)
         
-        # 1. ЭНЕРГЕТИКА (верхний левый) - строка 0, столбец 0
-        energy_widget = self._create_param_widget("ЭНЕРГЕТИКА", [
-            ("Потребление", "0", "МВт", 0),  # (название, значение_по_умолчанию, единица_измерения, id_параметра)
-            ("Генерация", "0", "МВт", 1),
-            ("Накопитель", "0", "МВт", 2)
-        ])
-        main_layout.addWidget(energy_widget, 0, 0)
         
-        # 2. СВЯЗЬ (верхний правый) - строка 0, столбец 1
-        comm_widget = self._create_param_widget("СВЯЗЬ", [
-            ("Скорость", "0", "Мбит/с", 3),
-            ("Задержка", "0", "мс", 4),
-            ("SNR", "0", "dB", 5)
-        ])
-        main_layout.addWidget(comm_widget, 0, 1)
+        # Создаём 4 блока
+        blocks = [
+            ("ЭНЕРГЕТИКА", [
+                ("Потребление", "0", "МВт", 0),
+                ("Генерация", "0", "МВт", 1),
+                ("Накопитель", "0", "МВт", 2)
+            ], 0, 0),
+            ("СВЯЗЬ", [
+                ("Скорость", "0", "Мбит/с", 3),
+                ("Задержка", "0", "мс", 4),
+                ("SNR", "0", "dB", 5)
+            ], 0, 1),
+            ("МАТЕРИАЛЫ", [
+                ("Семена", "0/5", "", 6),
+                ("Ca²⁺-активатор", "Не готов", "", 7),
+                ("Биоматериал", "Не готов", "", 8)
+            ], 1, 0),
+            ("РОВЕР", [
+                ("Заряд", "0", "%", 9),
+                ("Дистанция", "0", "км", 10),
+                ("Ресурсы", "0", "шт", 11)
+            ], 1, 1)
+        ]
         
-        # 3. МАТЕРИАЛЫ (нижний левый) - строка 1, столбец 0
-        materials_widget = self._create_param_widget("МАТЕРИАЛЫ", [
-            ("Семена", "0/5", "", 6),
-            ("Ca²⁺-активатор", "Не готов", "", 7),
-            ("Биоматериал", "Не готов", "", 8)
-        ])
-        main_layout.addWidget(materials_widget, 1, 0)
+        for title, params, row, col in blocks:
+            frame = self._create_param_widget(title, params)
+            main_layout.addWidget(frame, row, col)
+            self.block_frames[title] = frame
+            
+            # Сохраняем эффект свечения
+            effect = frame.graphicsEffect()
+            if isinstance(effect, QGraphicsDropShadowEffect):
+                self.block_effects[title] = effect
         
-        # 4. РОВЕР (нижний правый) - строка 1, столбец 1
-        rover_widget = self._create_param_widget("РОВЕР", [
-            ("Заряд", "0", "%", 9),
-            ("Дистанция", "0", "км", 10),
-            ("Ресурсы", "0", "шт", 11)
-        ])
-        main_layout.addWidget(rover_widget, 1, 1)
+        # # 1. ЭНЕРГЕТИКА (верхний левый) - строка 0, столбец 0
+        # energy_widget = self._create_param_widget("ЭНЕРГЕТИКА", [
+        #     ("Потребление", "0", "МВт", 0),  # (название, значение_по_умолчанию, единица_измерения, id_параметра)
+        #     ("Генерация", "0", "МВт", 1),
+        #     ("Накопитель", "0", "МВт", 2)
+        # ])
+        # main_layout.addWidget(energy_widget, 0, 0)
+        
+        # # 2. СВЯЗЬ (верхний правый) - строка 0, столбец 1
+        # comm_widget = self._create_param_widget("СВЯЗЬ", [
+        #     ("Скорость", "0", "Мбит/с", 3),
+        #     ("Задержка", "0", "мс", 4),
+        #     ("SNR", "0", "dB", 5)
+        # ])
+        # main_layout.addWidget(comm_widget, 0, 1)
+        
+        # # 3. МАТЕРИАЛЫ (нижний левый) - строка 1, столбец 0
+        # materials_widget = self._create_param_widget("МАТЕРИАЛЫ", [
+        #     ("Семена", "0/5", "", 6),
+        #     ("Ca²⁺-активатор", "Не готов", "", 7),
+        #     ("Биоматериал", "Не готов", "", 8)
+        # ])
+        # main_layout.addWidget(materials_widget, 1, 0)
+        
+        # # 4. РОВЕР (нижний правый) - строка 1, столбец 1
+        # rover_widget = self._create_param_widget("РОВЕР", [
+        #     ("Заряд", "0", "%", 9),
+        #     ("Дистанция", "0", "км", 10),
+        #     ("Ресурсы", "0", "шт", 11)
+        # ])
+        # main_layout.addWidget(rover_widget, 1, 1)
         
         # Растягиваем ячейки сетки 2x2 (чтобы квадраты занимали всё доступное место)
         main_layout.setColumnStretch(0, 1)  # 1-й столбец растягивается
@@ -173,30 +210,33 @@ class StationWidget(QWidget):
     def _create_param_widget(self, title, params):
         """Создаёт виджет для группы параметров (один квадрат: Энергетика, Связь и т.д.)"""
         widget = QFrame()
+        widget.setObjectName("telemetryBlock")  # Для стилей и будущего удобства
         # Стилизация квадрата: полупрозрачный фон, тонкая рамка, скругление углов
+        # === Основные стили ===
         widget.setStyleSheet("""
-            QFrame {
+            QFrame#telemetryBlock {
                 background-color: rgba(5, 10, 20, 100);
-                border: 1px solid rgba(143, 255, 255, 40);
-                border-radius: 4px;
+                border: 1px solid rgba(143, 255, 255, 60);
+                border-radius: 6px;
             }
         """)
         
         layout = QVBoxLayout(widget)  # Вертикальное расположение внутри квадрата
-        layout.setContentsMargins(8, 8, 8, 8)  # Отступы от краёв квадрата до содержимого (8px со всех сторон)
-        layout.setSpacing(20)  # Расстояние между элементами внутри квадрата (20px)
+        layout.setContentsMargins(sx(8), sx(8), sx(8), sx(8))  # Отступы от краёв квадрата до содержимого (8px со всех сторон)
+        layout.setSpacing(sx(20))  # Расстояние между элементами внутри квадрата (20px)
         
-        # Заголовок квадрата (например "ЭНЕРГЕТИКА")
+        # Заголовок
         title_lbl = QLabel(title)
-        title_lbl.setStyleSheet(f"color: {CYAN}; font-size: {sx(11)}pt; font-weight: bold; border-bottom: 1pt solid rgba(143,255,255,50); padding-bottom: {sp(4)}pt;")
-        title_lbl.setAlignment(Qt.AlignCenter)  # Выравнивание заголовка по центру
+        title_lbl.setStyleSheet(f"color: {CYAN}; font-size: {sx(11)}pt; font-weight: bold; "
+                            f"border-bottom: 1pt solid rgba(143,255,255,50); padding-bottom: {sp(4)}pt;")
+        title_lbl.setAlignment(Qt.AlignCenter)
         layout.addWidget(title_lbl)
         
         # Параметры (3 штуки: Потребление, Генерация, Накопитель и т.д.)
         for param_name, default_value, unit, param_id in params:
             param_layout = QHBoxLayout()  # Горизонтальное расположение для одного параметра
-            param_layout.setContentsMargins(4, 2, 4, 2)  # Отступы вокруг строки параметра (лево=4, верх=2, право=4, низ=2)
-            param_layout.setSpacing(8)  # Расстояние между элементами внутри строки (8px)
+            param_layout.setContentsMargins(sx(4), sx(2), sx(4), sx(2))  # Отступы вокруг строки параметра (лево=4, верх=2, право=4, низ=2)
+            param_layout.setSpacing(sx(8))  # Расстояние между элементами внутри строки (8px)
             
             # Название параметра (например "Потребление:")
             name_lbl = QLabel(f"{param_name}:")
@@ -225,6 +265,16 @@ class StationWidget(QWidget):
             self.value_labels[(self.station_idx, param_id)] = value_lbl
         
         layout.addStretch()  # Растяжка внизу - прижимает все параметры к верху, чтобы не было пустоты снизу
+        
+        # ==================== ДОБАВЛЯЕМ СВЕЧЕНИЕ ====================
+        glow = QGraphicsDropShadowEffect()
+        glow.setBlurRadius(15)           # Радиус свечения
+        # glow.setColor(QColor(143, 255, 255, 80))   # CYAN с прозрачностью
+        glow.setColor(QColor(255, 0, 0, 80))
+        glow.setOffset(0, 0)             # Свечение со всех сторон
+        glow.setEnabled(True)
+        widget.setGraphicsEffect(glow)
+        
         return widget
     
     def set_param_value(self, param_id: int, value: str, color: str = None):
@@ -240,6 +290,16 @@ class StationWidget(QWidget):
             else:
                 # Возвращаем к зелёному по умолчанию
                 lbl.setStyleSheet(f"color: {GREEN}; font-size: {sx(10)}pt; font-weight: bold;")
+    
+    def set_block_glow(self, block_title: str, color: str = CYAN, intensity: int = 90, blur: int = 16):
+        """Меняет свечение для конкретного блока на этой станции"""
+        if block_title in self.block_effects:
+            effect = self.block_effects[block_title]
+            qcolor = QColor(color)
+            qcolor.setAlpha(max(30, min(180, intensity)))  # ограничиваем диапазон
+            effect.setColor(qcolor)
+            effect.setBlurRadius(blur)      
+    
 # 262-600: КЛАСС MAIN WINDOW - главное окно приложения
 class MarsForecastApp(QMainWindow):
     def __init__(self):
@@ -284,10 +344,10 @@ class MarsForecastApp(QMainWindow):
         self.grid.setContentsMargins(0, 0, 0, 0)
         self.main_layout.addLayout(self.grid)
 
-        self.stations.append(self._create_station("СТАНЦИЯ МАРС-1", 0))
-        self.stations.append(self._create_station("СТАНЦИЯ МАРС-2", 1))
-        self.stations.append(self._create_station("СТАНЦИЯ МАРС-3", 2))
-        self.stations.append(self._create_station("СТАНЦИЯ МАРС-4", 3))
+        self.stations.append(self._create_station("СТАНЦИЯ МАРС-1 ФИОЛЕТОВЫЕ", 0))
+        self.stations.append(self._create_station("СТАНЦИЯ МАРС-2 СИНИЕ", 1))
+        self.stations.append(self._create_station("СТАНЦИЯ МАРС-3 ЗЕЛЕНЫЕ", 2))
+        self.stations.append(self._create_station("СТАНЦИЯ МАРС-4 ОРАНЖЕВЫЕ", 3))
 
         self.grid.addWidget(self.stations[0], 0, 0)
         self.grid.addWidget(self._create_graphs(), 0, 1, 1, 2)
@@ -472,6 +532,17 @@ class MarsForecastApp(QMainWindow):
         painter.setPen(scan_pen)
         for y in range(0, self.height(), 4):
             painter.drawLine(0, y, self.width(), y)
+            
+                  
+    def set_station_block_glow(self, station_idx: int, block_title: str, color: str = CYAN, intensity: int = 90, blur: int = 16):
+        """Устанавливает свечение для блока на конкретной станции"""
+        if 0 <= station_idx < len(self.stations):
+            content = self.stations[station_idx].content_layout.itemAt(0)
+            if content and content.widget():
+                station_widget = content.widget()
+                if isinstance(station_widget, StationWidget):
+                    station_widget.set_block_glow(block_title, color, intensity, blur)
+            
 
 # 606-649: MAIN - точка входа в программу
 if __name__ == "__main__":

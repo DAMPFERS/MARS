@@ -201,6 +201,10 @@ def main() -> None:
     ERROR_COLOR = "#D71212"  # Красный цвет для ошибок
     
     #1я станция
+    window.set_station_block_glow(0, "ЭНЕРГЕТИКА", color="#E8EC19", intensity=120)
+    window.set_station_block_glow(0, "СВЯЗЬ", color="#8FFFFF", intensity=120)
+    window.set_station_block_glow(0, "МАТЕРИАЛЫ", color="#8FFFFF", intensity=120)
+    window.set_station_block_glow(0, "РОВЕР", color="#D92424", intensity=120)
     # Ровер
     station_idx = 0
     window.set_station_param(station_idx, 9, "0", ERROR_COLOR)     # Заряд (%)
@@ -212,6 +216,10 @@ def main() -> None:
     window.set_station_param(station_idx, 8, "Готов")    # Биоматериал
     
     #2я станция
+    window.set_station_block_glow(1, "ЭНЕРГЕТИКА", color="#D92424", intensity=120)
+    window.set_station_block_glow(1, "СВЯЗЬ", color="#E8EC19", intensity=120)
+    window.set_station_block_glow(1, "МАТЕРИАЛЫ", color="#8FFFFF", intensity=120)
+    window.set_station_block_glow(1, "РОВЕР", color="#8FFFFF", intensity=120)
     # Ровер
     station_idx = 1
     window.set_station_param(station_idx, 9, "91")     # Заряд (%)
@@ -223,6 +231,10 @@ def main() -> None:
     window.set_station_param(station_idx, 8, "Готов")    # Биоматериал
     
     #3я станция
+    window.set_station_block_glow(2, "ЭНЕРГЕТИКА", color="#8FFFFF", intensity=120)
+    window.set_station_block_glow(2, "СВЯЗЬ", color="#D92424", intensity=120)
+    window.set_station_block_glow(2, "МАТЕРИАЛЫ", color="#E8EC19", intensity=120)
+    window.set_station_block_glow(2, "РОВЕР", color="#8FFFFF", intensity=120)
     # Ровер
     station_idx = 2
     window.set_station_param(station_idx, 9, "95")     # Заряд (%)
@@ -234,6 +246,10 @@ def main() -> None:
     window.set_station_param(station_idx, 8, "Не готов", ERROR_COLOR)    # Биоматериал
     
     #4я станция
+    window.set_station_block_glow(3, "ЭНЕРГЕТИКА", color="#8FFFFF", intensity=120)
+    window.set_station_block_glow(3, "СВЯЗЬ", color="#8FFFFF", intensity=120)
+    window.set_station_block_glow(3, "МАТЕРИАЛЫ", color="#D92424", intensity=120)
+    window.set_station_block_glow(3, "РОВЕР", color="#E8EC19", intensity=120)
     # Ровер
     station_idx = 3
     window.set_station_param(station_idx, 9, "0", ERROR_COLOR)     # Заряд (%)
