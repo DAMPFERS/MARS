@@ -28,7 +28,7 @@ WEATHER_CSV = Path("data/weather/forecast.csv")
 
 FONT_PATH = "GUI/assets/fonts/DPix_8pt.ttf"
 COM_PORT = "COM11"
-
+GLOBAL_TIMER = 10000
 
 # Маппинг адресов → индексы станций в GUI
 STATION_ADDR_MAP = {
@@ -165,7 +165,7 @@ def main() -> None:
 
     # 4. Таймер обновления GUI (каждые 10 секунд)
     update_timer = QTimer()
-    update_timer.setInterval(10000)
+    update_timer.setInterval(GLOBAL_TIMER)
     
     current_idx = 0  # Глобальный индекс для активной точки графика
     # Инициализация активной точки и отправка начальной погоды

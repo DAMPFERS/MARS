@@ -367,6 +367,7 @@ def main() -> None:
         solar_device = serial_manager.getSolar()
         if solar_device and solar_device.last_solar_data :
             energy_data["generation"] = list(solar_device.last_solar_data)
+            energy_data["generation"][:]=[x*0.5 for x in energy_data["generation"]  ]
             if (forecast_data["Ветер"][tact_game] > 50) and (forecast_data["Состояние панелей"][tact_game] == 1): # Если ветер сильный и панели раскрыты, генерация падает
                 energy_data["generation"] = [0] * 6
         else:
@@ -397,7 +398,7 @@ def main() -> None:
             g = random.randint(180, 255)
             b = random.randint(0, 40)
             target_color = (r, g, b)
-            efficiency += forecast_data["Полное потребление"][tact_game] /39600 * 100 # Увеличиваем эффективность на процент от потребления (макс 100% при 39600 МВт)
+            efficiency += forecast_data["Полное потребление"][tact_game] /396000 * 100 # Увеличиваем эффективность на процент от потребления (макс 100% при 39600 МВт)
         else:               # не хватает энергии, нужно разрядить батареи
             delta = -delta  # Теперь delta - это сколько энергии нам не хватает
             for i in range(3):
@@ -418,7 +419,7 @@ def main() -> None:
                 g = random.randint(200, 255)
                 b = 0
                 target_color = (r, g, b)
-                efficiency += forecast_data["Полное потребление"][tact_game] /39600 * 100 # Увеличиваем эффективность на процент от потребления (макс 100% при 39600 МВт)ы
+                efficiency += forecast_data["Полное потребление"][tact_game] /396000 * 100 # Увеличиваем эффективность на процент от потребления (макс 100% при 39600 МВт)ы
 
         # 3. Сопоставляем модули с секциями ленты и обновляем их
         modules_mapping = [
