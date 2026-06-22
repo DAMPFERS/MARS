@@ -94,7 +94,7 @@ except ImportError:
 
 class LEDStrip:
     
-    def __init__(self, num_leds, pin=18, led_type="RGB", sections=None, global_brightness=255):
+    def __init__(self, num_leds, pin=18, led_type="RGB", sections=SECTIONS, global_brightness=255):
         """
         Инициализация ленты.
 

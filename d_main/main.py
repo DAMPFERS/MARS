@@ -71,7 +71,9 @@ def main() -> None:
         "consumption_rate": 13289.6
     }
     
-    
+    BRIGHTNESS_LUT = [int(round(pow(i / 100.0, 2.2) * 255)) for i in range(101)]
+    def brightness_percent_to_pwm(percent):
+        return BRIGHTNESS_LUT[min(100, max(0, percent))]
     
     # === 0. Настройка обработки исключений ===
     def handle_exception(exc_type, exc_value, exc_traceback):
@@ -151,6 +153,7 @@ def main() -> None:
     # Новая переменная для отслеживания ручного режима
     is_manual_mode_active = False
     
+    efficiency = 0.0
     
     def onTimerTick():
         nonlocal tick_count
@@ -163,6 +166,7 @@ def main() -> None:
         nonlocal rover_data
         
         nonlocal forecast_data
+        nonlocal efficiency
 
         if tick_count is None:  tick_count = 0
         else:                   tick_count += 1
@@ -170,7 +174,9 @@ def main() -> None:
         
         # Получаем текущий такт игры из статуса сервера
         status = client.getStatus()
-        tact_game = status['game_tick'] 
+        tact_game = status['game_tick']
+        
+        efficiency = 0.0 if tact_game == 0 else efficiency  # Сбрасываем эффективность в начале игры
         
         
         # Проверка статуса Nextion
@@ -317,8 +323,10 @@ def main() -> None:
         # Обновление значений генерации с COM-порта (купол энергетики)
         # energy_data["generation"] = serial_manager.getLastDataSolarPanels() 
         solar_device = serial_manager.getSolar()
-        if solar_device and solar_device.last_solar_data:
+        if solar_device and solar_device.last_solar_data :
             energy_data["generation"] = list(solar_device.last_solar_data)
+            if (forecast_data["Ветер"][tact_game] > 50) and (forecast_data["Состояние панелей"][tact_game] == 1): # Если ветер сильный и панели раскрыты, генерация падает
+                energy_data["generation"] = [0] * 6
         else:
             energy_data["generation"] = [0] * 6
         
@@ -347,6 +355,7 @@ def main() -> None:
             g = random.randint(180, 255)
             b = random.randint(0, 40)
             target_color = (r, g, b)
+            efficiency += forecast_data["Полное потребление"][tact_game] * 0.01 # Увеличиваем эффективность на 1% от потребления 
         else:               # не хватает энергии, нужно разрядить батареи
             delta = -delta  # Теперь delta - это сколько энергии нам не хватает
             for i in range(3):
@@ -367,6 +376,7 @@ def main() -> None:
                 g = random.randint(200, 255)
                 b = 0
                 target_color = (r, g, b)
+                efficiency += forecast_data["Полное потребление"][tact_game] * 0.01 # Увеличиваем эффективность на 1% от потребления 
 
         # 3. Сопоставляем модули с секциями ленты и обновляем их
         modules_mapping = [
@@ -382,7 +392,8 @@ def main() -> None:
             forecast_val = max(0.0, min(100.0, float(forecast_val)))
             
             # Конвертируем 0-100 в яркость 0-255
-            brightness = int(forecast_val * 2.55)
+            # brightness = int(forecast_val * 2.55)
+            brightness = brightness_percent_to_pwm(forecast_val)
             
             # Применяем к ленте
             led_strip.set_section_color(section_idx, target_color)
@@ -498,7 +509,8 @@ def main() -> None:
                 delivery_time=round(abs(float(material_data["delivery"])), 1),
                 charge=round(abs(float(rover_data["charge"])), 1),
                 distance=round((abs(float(rover_data['distance']))), 1),
-                status=rover_data["status"]
+                status=rover_data["status"],
+                efficiency=round(abs(float(efficiency)), 1)
             )
             # time.sleep(5)
             status = client.getStatus()

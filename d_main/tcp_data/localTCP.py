@@ -146,7 +146,8 @@ class StationTCPClient:
         delivery_time: int,
         charge: int,
         distance: float,
-        status: str
+        status: str,
+        efficiency: float = 0.0
     ) -> str:
         """Формирует JSON-строку с данными станции."""
         data = {
@@ -157,7 +158,8 @@ class StationTCPClient:
                 "energy": {
                     "consumption": consumption,
                     "generation": generation,
-                    "storage": storage
+                    "storage": storage,
+                    "efficiency": efficiency
                 },
                 "communication": {
                     "speed": speed,
@@ -193,7 +195,8 @@ class StationTCPClient:
         delivery_time: int,
         charge: int,
         distance: float,
-        status: str
+        status: str,
+        efficiency:float = 0.0
     ) -> None:
         """
         Ставит задачу на отправку данных станции в очередь.
@@ -213,7 +216,8 @@ class StationTCPClient:
             "delivery_time": delivery_time,
             "charge": charge,
             "distance": distance,
-            "status": status
+            "status": status,
+            "efficiency": efficiency
         }
         self._task_queue.put(task)
 
