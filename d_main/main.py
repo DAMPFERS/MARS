@@ -16,6 +16,7 @@ from LED import ledControl
 from GUI import GUI_Station_MARS
 from GUI.ui_scale import sp, sx
 from SerialControll import serialDom
+import json
 
 
 # from NextionWork import Nextion
@@ -23,14 +24,55 @@ from tcp_data import localTCP
 
 
 
-STATION_ADDRESS = "0x15"
-STATION_ID = 1
 
-IP_SERVER = "192.168.3.10"
-PORT_SERVER = 5005
+def load_config(config_path="config.json"):
+    """
+    Загружает конфигурацию из JSON файла.
+    Если файл не найден или поврежден, использует значения по умолчанию.
+    """
+    default_config = {
+        "station": {
+            "address": "0x15",
+            "id": 1,
+            "name": "Station Alpha"
+        },
+        "server": {
+            "ip": "192.168.3.6",
+            "port": 5005
+        },
+        "paths": {
+            "font": "GUI/assets/fonts/DPix_8pt.ttf",
+            "weather_csv": "data/weather/forecast.csv"
+        }
+    }
+    
+    try:
+        with open(config_path, 'r', encoding='utf-8') as f:
+            config = json.load(f)
+            print(f"[Main] Конфигурация загружена из {config_path}")
+            return config
+    except FileNotFoundError:
+        print(f"[Main] Файл {config_path} не найден. Использую настройки по умолчанию")
+        return default_config
+    except json.JSONDecodeError as e:
+        print(f"[Main] Ошибка парсинга {config_path}: {e}. Использую настройки по умолчанию")
+        return default_config
 
-FONTH_PATH = "GUI/assets/fonts/DPix_8pt.ttf"
-WEATHER_CSV = Path("data/weather/forecast.csv")
+
+# Загрузка конфигурации
+config = load_config()
+
+STATION_ADDRESS = config["station"]["address"]
+STATION_ID = config["station"]["id"]
+
+IP_SERVER = config["server"]["ip"]
+PORT_SERVER = config["server"]["port"]
+
+FONTH_PATH = config["paths"]["font"]
+WEATHER_CSV = Path(config["paths"]["weather_csv"])
+
+STATION_NAME = config["station"]["name"]
+
 
 
 def main() -> None:
@@ -355,7 +397,7 @@ def main() -> None:
             g = random.randint(180, 255)
             b = random.randint(0, 40)
             target_color = (r, g, b)
-            efficiency += forecast_data["Полное потребление"][tact_game] * 0.01 # Увеличиваем эффективность на 1% от потребления 
+            efficiency += forecast_data["Полное потребление"][tact_game] /39600 * 100 # Увеличиваем эффективность на процент от потребления (макс 100% при 39600 МВт)
         else:               # не хватает энергии, нужно разрядить батареи
             delta = -delta  # Теперь delta - это сколько энергии нам не хватает
             for i in range(3):
@@ -376,7 +418,7 @@ def main() -> None:
                 g = random.randint(200, 255)
                 b = 0
                 target_color = (r, g, b)
-                efficiency += forecast_data["Полное потребление"][tact_game] * 0.01 # Увеличиваем эффективность на 1% от потребления 
+                efficiency += forecast_data["Полное потребление"][tact_game] /39600 * 100 # Увеличиваем эффективность на процент от потребления (макс 100% при 39600 МВт)ы
 
         # 3. Сопоставляем модули с секциями ленты и обновляем их
         modules_mapping = [
@@ -497,7 +539,7 @@ def main() -> None:
             
             client.send_station_data(
                 station_id=STATION_ID,
-                station_name="Station Alpha",
+                station_name=STATION_NAME,
                 consumption=round(float(forecast_data["Полное потребление"][tact_game]), 1),
                 generation=round(float(energy_data["full_generation"]), 1),
                 storage=round(float(energy_data["battery1_level"] + energy_data["battery2_level"] + energy_data["battery3_level"]), 1),

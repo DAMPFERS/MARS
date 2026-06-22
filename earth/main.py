@@ -53,10 +53,10 @@ def parseLatestConsumption(log_path: Path) -> dict:
     """
     
     # Инициализируем результат: для каждой станции словарь с нулевыми значениями
-    result = [ {
-        {"потребление": 0, "генерация": 0, "сообщение": ""}
+    result = [ 
+        {"Потребление": 0, "Генерация": 0, "Сообщение": "", "Время принятия": "00:00:00"}
         for _ in STATION_ADDR_MAP
-    }]
+    ]
     
     if not log_path.exists():
         return result  # Если файл не существует, возвращаем нули
@@ -81,7 +81,7 @@ def parseLatestConsumption(log_path: Path) -> dict:
             # Обновляем сообщение, если оно есть
             message = row.get("Сообщение", '').strip()
             if message:
-                result[station_idx]["сообщение"] = message
+                result[station_idx]["Сообщение"] = message
                 
             # Обновляем потребление и генерацию, если они есть
             consumption = row.get("Потребление", '').strip()
@@ -89,14 +89,18 @@ def parseLatestConsumption(log_path: Path) -> dict:
             
             if consumption:
                 try:
-                    result[station_idx]["потребление"] = int(consumption)
+                    result[station_idx]["Потребление"] = int(consumption)
                 except ValueError:
-                    result[station_idx]["потребление"] = 0  # Если не число, оставляем 0
+                    result[station_idx]["Потребление"] = 0  # Если не число, оставляем 0
             if generation:
                 try:
-                    result[station_idx]["генерация"] = int(generation)
+                    result[station_idx]["Генерация"] = int(generation)
                 except ValueError:
-                    result[station_idx]["генерация"] = 0  # Если не число, оставляем 0
+                    result[station_idx]["Генерация"] = 0  # Если не число, оставляем 0
+                    
+            timestamp = row.get("Время принятия", '').strip()
+            if timestamp:
+                result[station_idx]["Время принятия"] = timestamp  # Обновляем время принятия
             
         return result    
             
@@ -199,11 +203,14 @@ def main() -> None:
     #----------------------------------------------------------------------------###################################
     #Установка статических значений для всех станций
     ERROR_COLOR = "#D71212"  # Красный цвет для ошибок
+    # "#8FFFFF"
+    # E8EC19
+    
     
     #1я станция
-    window.set_station_block_glow(0, "ЭНЕРГЕТИКА", color="#E8EC19", intensity=120)
-    window.set_station_block_glow(0, "СВЯЗЬ", color="#8FFFFF", intensity=50)
-    window.set_station_block_glow(0, "МАТЕРИАЛЫ", color="#8FFFFF", intensity=50)
+    window.set_station_block_glow(0, "ЭНЕРГЕТИКА", color="#D92424", intensity=120)
+    window.set_station_block_glow(0, "СВЯЗЬ", color="#D92424", intensity=120)
+    window.set_station_block_glow(0, "МАТЕРИАЛЫ", color="#D92424", intensity=120)
     window.set_station_block_glow(0, "РОВЕР", color="#D92424", intensity=120)
     # Ровер
     station_idx = 0
@@ -211,45 +218,45 @@ def main() -> None:
     window.set_station_param(station_idx, 10, "0", ERROR_COLOR)  # Дистанция (км)
     window.set_station_param(station_idx, 11, "0", ERROR_COLOR)    # Ресурсы (шт.)
     # Материалы
-    window.set_station_param(station_idx, 6, "5/5")           # Семена
-    window.set_station_param(station_idx, 7, "Готов") # Активатор
-    window.set_station_param(station_idx, 8, "Готов")    # Биоматериал
+    window.set_station_param(station_idx, 6, "0/5", ERROR_COLOR)           # Семена
+    window.set_station_param(station_idx, 7, "Не готов", ERROR_COLOR) # Активатор
+    window.set_station_param(station_idx, 8, "Не гГотов", ERROR_COLOR)    # Биоматериал
     
     #2я станция
     window.set_station_block_glow(1, "ЭНЕРГЕТИКА", color="#D92424", intensity=120)
-    window.set_station_block_glow(1, "СВЯЗЬ", color="#E8EC19", intensity=120)
-    window.set_station_block_glow(1, "МАТЕРИАЛЫ", color="#8FFFFF", intensity=50)
-    window.set_station_block_glow(1, "РОВЕР", color="#8FFFFF", intensity=50)
+    window.set_station_block_glow(1, "СВЯЗЬ", color="#D92424", intensity=120)
+    window.set_station_block_glow(1, "МАТЕРИАЛЫ", color="#D92424", intensity=120)
+    window.set_station_block_glow(1, "РОВЕР", color="#D92424", intensity=120)
     # Ровер
     station_idx = 1
-    window.set_station_param(station_idx, 9, "91")     # Заряд (%)
-    window.set_station_param(station_idx, 10, "81")  # Дистанция (км)
-    window.set_station_param(station_idx, 11, "27")    # Ресурсы (шт.)
+    window.set_station_param(station_idx, 9, "0", ERROR_COLOR)     # Заряд (%)
+    window.set_station_param(station_idx, 10, "0", ERROR_COLOR)  # Дистанция (км)
+    window.set_station_param(station_idx, 11, "0", ERROR_COLOR)    # Ресурсы (шт.)
     # Материалы
-    window.set_station_param(station_idx, 6, "5/5")           # Семена
-    window.set_station_param(station_idx, 7, "Готов") # Активатор
-    window.set_station_param(station_idx, 8, "Готов")    # Биоматериал
+    window.set_station_param(station_idx, 6, "0/5", ERROR_COLOR)           # Семена
+    window.set_station_param(station_idx, 7, "Не готов", ERROR_COLOR) # Активатор
+    window.set_station_param(station_idx, 8, "Не готов", ERROR_COLOR)    # Биоматериал
     
     #3я станция
-    window.set_station_block_glow(2, "ЭНЕРГЕТИКА", color="#8FFFFF", intensity=50)
+    window.set_station_block_glow(2, "ЭНЕРГЕТИКА", color="#D92424", intensity=120)
     window.set_station_block_glow(2, "СВЯЗЬ", color="#D92424", intensity=120)
-    window.set_station_block_glow(2, "МАТЕРИАЛЫ", color="#E8EC19", intensity=120)
-    window.set_station_block_glow(2, "РОВЕР", color="#8FFFFF", intensity=50)
+    window.set_station_block_glow(2, "МАТЕРИАЛЫ", color="#D92424", intensity=120)
+    window.set_station_block_glow(2, "РОВЕР", color="#D92424", intensity=120)
     # Ровер
     station_idx = 2
-    window.set_station_param(station_idx, 9, "95")     # Заряд (%)
-    window.set_station_param(station_idx, 10, "30")  # Дистанция (км)
-    window.set_station_param(station_idx, 11, "10")    # Ресурсы (шт.)
+    window.set_station_param(station_idx, 9, "0", ERROR_COLOR)     # Заряд (%)
+    window.set_station_param(station_idx, 10, "0", ERROR_COLOR)  # Дистанция (км)
+    window.set_station_param(station_idx, 11, "0", ERROR_COLOR)    # Ресурсы (шт.)
     # Материалы
     window.set_station_param(station_idx, 6, "0/5", ERROR_COLOR)           # Семена
     window.set_station_param(station_idx, 7, "Не готов", ERROR_COLOR) # Активатор
     window.set_station_param(station_idx, 8, "Не готов", ERROR_COLOR)    # Биоматериал
     
     #4я станция
-    window.set_station_block_glow(3, "ЭНЕРГЕТИКА", color="#8FFFFF", intensity=50)
-    window.set_station_block_glow(3, "СВЯЗЬ", color="#8FFFFF", intensity=50)
+    window.set_station_block_glow(3, "ЭНЕРГЕТИКА", color="#D92424", intensity=120)
+    window.set_station_block_glow(3, "СВЯЗЬ", color="#D92424", intensity=120)
     window.set_station_block_glow(3, "МАТЕРИАЛЫ", color="#D92424", intensity=120)
-    window.set_station_block_glow(3, "РОВЕР", color="#E8EC19", intensity=120)
+    window.set_station_block_glow(3, "РОВЕР", color="#D92424", intensity=120)
     # Ровер
     station_idx = 3
     window.set_station_param(station_idx, 9, "0", ERROR_COLOR)     # Заряд (%)
@@ -294,16 +301,21 @@ def main() -> None:
                 consumption = energy.get("consumption", 0)
                 generation = energy.get("generation", 0)
                 storage = energy.get("storage", 0)
+                efficiency = energy.get("efficiency", 0)
                 
                 window.set_station_param(station_idx, 0, str(consumption))  # Потребление (МВт)
                 window.set_station_param(station_idx, 1, str(generation))   # Генерация (МВт)
                 window.set_station_param(station_idx, 2, str(storage))      # Накопитель (МВт)
+                window.set_station_param(station_idx, 13, str(efficiency))   # Энергоэффективность (%)
+                
                 
                 # СВЯЗЬ
                 communication = params.get("communication", {})
                 speed = communication.get("speed", 0)
                 latency = communication.get("latency", 0)
                 snr = communication.get("snr", 0)
+                # timastamp = communication.get("timestamp", "00:00:00")
+                # data_time = communication.get("data_time", "00:00:00")
                 
                 window.set_station_param(station_idx, 3, str(speed))    # Скорость (Мбит/с)
                 window.set_station_param(station_idx, 4, str(latency))  # Задержка (мс)
@@ -333,14 +345,17 @@ def main() -> None:
                 
                 
         # --- Обновление UI из логов ---
-        # log_data = parseLatestConsumption(LOG_PATH)
-        # print(log_data)
-        # for idx in range(len(log_data)):
-        #     station_data = log_data[idx]
+        log_data = parseLatestConsumption(LOG_PATH) # Получаем данные из логов для каждой станции (потребление, генерация, сообщение)
+        print(log_data)
+        
+        for idx in range(len(log_data)):
+            station_data = log_data[idx]
+            timestamp = station_data.get("Время принятия", "00:00:00")
         #     consumption = station_data.get("потребление", 0)
         #     generation = station_data.get("генерация", 0)
         #     message = station_data.get("сообщение", "")
             
+            window.set_station_param(idx, param_id=12, value=str(timestamp))  # Время принятия данных
         #     window.set_station_param(idx, param_id=0, value=str(consumption))  # param_id=0 для потребления
         #     window.set_station_param(idx, param_id=1, value=str(generation))   # param_id=1 для генерации
             # window.set_station_param(idx, param_id=2, value=message)          # param_id=2 для сообщения

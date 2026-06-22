@@ -1,0 +1,15 @@
+{
+    "station": {
+        "address": "0x15",
+        "id": 1,
+        "name": "Station Alpha"
+    },
+    "server": {
+        "ip": "192.168.3.6",
+        "port": 5005
+    },
+    "paths": {
+        "font": "GUI/assets/fonts/DPix_8pt.ttf",
+        "weather_csv": "data/weather/forecast.csv"
+    }
+}
