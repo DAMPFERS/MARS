@@ -410,39 +410,39 @@ def addColumnToCSV(file_path, column_name, data):
 
 if __name__ == "__main__":
     
-    # sun = readExcelByColumn("Сonsumption plan Data_frame_1.xlsx", "Погода", "Солнце")
-    # weat = readExcelByColumn("Сonsumption plan Data_frame_1.xlsx", "Погода", "Ветер")
+    sun = readExcelByColumn("Сonsumption plan Data_frame_1.xlsx", "Погода", "Солнце")
+    weat = readExcelByColumn("Сonsumption plan Data_frame_1.xlsx", "Погода", "Ветер")
     
-    # glav = readExcelByColumn("Сonsumption plan Data_frame_1.xlsx", "Потребление", "Главный модуль")
-    # svaz = readExcelByColumn("Сonsumption plan Data_frame_1.xlsx", "Потребление", "Модуль связи")
-    # live = readExcelByColumn("Сonsumption plan Data_frame_1.xlsx", "Потребление", "Жилой модуль")
-    # energ = readExcelByColumn("Сonsumption plan Data_frame_1.xlsx", "Потребление", "Модуль энергетики")
+    glav = readExcelByColumn("Сonsumption plan Data_frame_1.xlsx", "Потребление", "Главный модуль")
+    svaz = readExcelByColumn("Сonsumption plan Data_frame_1.xlsx", "Потребление", "Модуль связи")
+    live = readExcelByColumn("Сonsumption plan Data_frame_1.xlsx", "Потребление", "Жилой модуль")
+    energ = readExcelByColumn("Сonsumption plan Data_frame_1.xlsx", "Потребление", "Модуль энергетики")
     
-    # state = readExcelByColumn("Сonsumption plan Data_frame_1.xlsx", "Параметры", "Состояние панелей")
+    state = readExcelByColumn("Сonsumption plan Data_frame_1.xlsx", "Параметры", "Состояние панелей")
     
-    # print(type(sun))
-    # print(len(weat))
+    print(type(sun))
+    print(len(weat))
     
-    # print(len(glav))
-    # print(len(svaz))
-    # print(len(live))
-    # print(len(energ))
+    print(len(glav))
+    print(len(svaz))
+    print(len(live))
+    print(len(energ))
     
-    # print(len(state))
+    print(len(state))
     
-    # addColumnToCSV("forecast.csv", "Солнце", sun)
-    # addColumnToCSV("forecast.csv", "Ветер", weat) 
+    addColumnToCSV("forecast.csv", "Солнце", sun)
+    addColumnToCSV("forecast.csv", "Ветер", weat) 
     
-    # addColumnToCSV("forecast.csv", "Главный модуль", glav) 
-    # addColumnToCSV("forecast.csv", "Модуль связи", svaz) 
-    # addColumnToCSV("forecast.csv", "Жилой модуль", live) 
-    # addColumnToCSV("forecast.csv", "Модуль энергетики", energ) 
+    addColumnToCSV("forecast.csv", "Главный модуль", glav) 
+    addColumnToCSV("forecast.csv", "Модуль связи", svaz) 
+    addColumnToCSV("forecast.csv", "Жилой модуль", live) 
+    addColumnToCSV("forecast.csv", "Модуль энергетики", energ) 
     
-    # addColumnToCSV("forecast.csv", "Состояние панелей", state)    
+    addColumnToCSV("forecast.csv", "Состояние панелей", state)    
     
-    # print("Конец")
+    print("Конец")
     # print(len(res))
-    # exit()
+    exit()
     
     
     
