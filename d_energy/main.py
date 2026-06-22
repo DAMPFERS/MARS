@@ -410,53 +410,53 @@ def addColumnToCSV(file_path, column_name, data):
 
 if __name__ == "__main__":
     
-    sun = readExcelByColumn("Сonsumption plan Data_frame_1.xlsx", "Погода", "Солнце")
-    weat = readExcelByColumn("Сonsumption plan Data_frame_1.xlsx", "Погода", "Ветер")
+    # sun = readExcelByColumn("Сonsumption plan Data_frame_1.xlsx", "Погода", "Солнце")
+    # weat = readExcelByColumn("Сonsumption plan Data_frame_1.xlsx", "Погода", "Ветер")
     
-    glav = readExcelByColumn("Сonsumption plan Data_frame_1.xlsx", "Потребление", "Главный модуль")
-    svaz = readExcelByColumn("Сonsumption plan Data_frame_1.xlsx", "Потребление", "Модуль связи")
-    live = readExcelByColumn("Сonsumption plan Data_frame_1.xlsx", "Потребление", "Жилой модуль")
-    energ = readExcelByColumn("Сonsumption plan Data_frame_1.xlsx", "Потребление", "Модуль энергетики")
+    # glav = readExcelByColumn("Сonsumption plan Data_frame_1.xlsx", "Потребление", "Главный модуль")
+    # svaz = readExcelByColumn("Сonsumption plan Data_frame_1.xlsx", "Потребление", "Модуль связи")
+    # live = readExcelByColumn("Сonsumption plan Data_frame_1.xlsx", "Потребление", "Жилой модуль")
+    # energ = readExcelByColumn("Сonsumption plan Data_frame_1.xlsx", "Потребление", "Модуль энергетики")
     
-    state = readExcelByColumn("Сonsumption plan Data_frame_1.xlsx", "Параметры", "Состояние панелей")
+    # state = readExcelByColumn("Сonsumption plan Data_frame_1.xlsx", "Параметры", "Состояние панелей")
     
-    print(type(sun))
-    print(len(weat))
+    # print(type(sun))
+    # print(len(weat))
     
-    print(len(glav))
-    print(len(svaz))
-    print(len(live))
-    print(len(energ))
+    # print(len(glav))
+    # print(len(svaz))
+    # print(len(live))
+    # print(len(energ))
     
-    print(len(state))
+    # print(len(state))
     
-    addColumnToCSV("forecast.csv", "Солнце", sun)
-    addColumnToCSV("forecast.csv", "Ветер", weat) 
+    # addColumnToCSV("forecast.csv", "Солнце", sun)
+    # addColumnToCSV("forecast.csv", "Ветер", weat) 
     
-    addColumnToCSV("forecast.csv", "Главный модуль", glav) 
-    addColumnToCSV("forecast.csv", "Модуль связи", svaz) 
-    addColumnToCSV("forecast.csv", "Жилой модуль", live) 
-    addColumnToCSV("forecast.csv", "Модуль энергетики", energ) 
+    # addColumnToCSV("forecast.csv", "Главный модуль", glav) 
+    # addColumnToCSV("forecast.csv", "Модуль связи", svaz) 
+    # addColumnToCSV("forecast.csv", "Жилой модуль", live) 
+    # addColumnToCSV("forecast.csv", "Модуль энергетики", energ) 
     
-    addColumnToCSV("forecast.csv", "Состояние панелей", state)    
+    # addColumnToCSV("forecast.csv", "Состояние панелей", state)    
     
-    print("Конец")
+    # print("Конец")
     # print(len(res))
-    exit()
+    # exit()
     
     
     
     print("Вас приветствует центр планирования полетов миссии M.A.Р.C.")
     
-    station_name = None
-    while station_name not in [1, 2, 3, 4]:
-        station_name = int(input("Введите номер станции: "))
-        time.sleep(1)
-        if station_name not in [1, 2, 3, 4]:
-            print("Неверный номер станции. Пожалуйста, введите число от 1 до 4.")     
+    station_name = 4
+    # while station_name not in [1, 2, 3, 4]:
+    #     station_name = int(input("Введите номер станции: "))
+    #     time.sleep(1)
+    #     if station_name not in [1, 2, 3, 4]:
+    #         print("Неверный номер станции. Пожалуйста, введите число от 1 до 4.")     
         
     print("Получение данных с базы данных управления полетами и формирование файла... (подождите)")
-    time.sleep(3)  # Симуляция времени обработки данных
+    time.sleep(2)  # Симуляция времени обработки данных
     
     
     directory = ""  # Заменить на нужный путь
