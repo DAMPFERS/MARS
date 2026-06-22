@@ -12,7 +12,7 @@ from typing import Optional, Dict, Any
 
 import csv
 
-IP_ADDRESS = "192.168.3.10"
+IP_ADDRESS = "192.168.3.6"
 PORT = 5005
 
 
