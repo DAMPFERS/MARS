@@ -115,7 +115,7 @@ def main() -> None:
     
     BRIGHTNESS_LUT = [int(round(pow(i / 100.0, 2.2) * 255)) for i in range(101)]
     def brightness_percent_to_pwm(percent):
-        return BRIGHTNESS_LUT[min(100, max(0, percent))]
+        return BRIGHTNESS_LUT[int(min(100, max(0, percent)))]
     
     # === 0. Настройка обработки исключений ===
     def handle_exception(exc_type, exc_value, exc_traceback):
